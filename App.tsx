@@ -3,13 +3,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Message, LineOASettings, Step } from './types';
 import { chatWithGemini, generateLineConfig } from './services/geminiService';
 import MobilePreview from './components/MobilePreview';
-import { 
-  Send, 
-  MessageSquare, 
-  Settings, 
-  Layout, 
-  Code, 
-  Eye, 
+import {
+  Send,
+  MessageSquare,
+  Settings,
+  Layout,
+  Code,
+  Eye,
   Rocket,
   CheckCircle2,
   AlertCircle,
@@ -48,7 +48,7 @@ const App: React.FC = () => {
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<'chat' | 'config' | 'preview'>('chat');
-  
+
   // LIFF States
   const [liffState, setLiffState] = useState<{
     isInit: boolean;
@@ -60,12 +60,24 @@ const App: React.FC = () => {
     profile: null
   });
 
+  // API Key State
+  const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('gemini_api_key') || '');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(!localStorage.getItem('gemini_api_key'));
+  const [tempApiKey, setTempApiKey] = useState('');
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // LIFF Initialization
   useEffect(() => {
     const initLiff = async () => {
       try {
+        // Check if LIFF SDK is loaded
+        if (typeof liff === 'undefined') {
+          console.error("LIFF SDK not found. Please check your internet connection and script tag.");
+          setLiffState({ isInit: true, error: "SDK not loaded", profile: null });
+          return;
+        }
+
         // LIFF IDは本番環境では環境変数などから取得しますが、
         // ここではデモンストレーション用に初期化エラーを許容する構成にします。
         await liff.init({ liffId: "YOUR_LIFF_ID_HERE" }).catch((err: any) => {
@@ -119,7 +131,7 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await chatWithGemini([...messages, userMessage], settings);
+      const response = await chatWithGemini([...messages, userMessage], settings, apiKey);
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -129,7 +141,7 @@ const App: React.FC = () => {
       setMessages(prev => [...prev, assistantMessage]);
 
       if (settings.accountName === '' && input.length > 5) {
-        const config = await generateLineConfig(input);
+        const config = await generateLineConfig(input, apiKey);
         if (config) {
           setSettings(prev => ({
             ...prev,
@@ -157,6 +169,14 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSaveApiKey = () => {
+    if (tempApiKey.trim()) {
+      setApiKey(tempApiKey);
+      localStorage.setItem('gemini_api_key', tempApiKey);
+      setShowApiKeyInput(false);
+    }
+  };
+
   const handleLogin = () => {
     if (!liff.isLoggedIn()) {
       liff.login();
@@ -165,15 +185,15 @@ const App: React.FC = () => {
 
   const renderConfigStep = () => {
     const inputClasses = "w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all";
-    
-    switch(currentStep) {
+
+    switch (currentStep) {
       case Step.CONFIG:
         return (
           <div className="space-y-6 animate-fadeIn">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">アカウント名</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={settings.accountName}
                 onChange={(e) => updateSetting('accountName', e.target.value)}
                 placeholder="例: Gemini Cafe"
@@ -182,7 +202,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">説明文</label>
-              <textarea 
+              <textarea
                 value={settings.description}
                 onChange={(e) => updateSetting('description', e.target.value)}
                 placeholder="アカウントの目的や特徴"
@@ -192,7 +212,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">あいさつメッセージ</label>
-              <textarea 
+              <textarea
                 value={settings.greetingMessage}
                 onChange={(e) => updateSetting('greetingMessage', e.target.value)}
                 placeholder="友だち追加時に自動送信される文章"
@@ -213,8 +233,8 @@ const App: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Channel ID</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={settings.channelId}
                 onChange={(e) => updateSetting('channelId', e.target.value)}
                 className={inputClasses}
@@ -222,8 +242,8 @@ const App: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Channel Secret</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 value={settings.channelSecret}
                 onChange={(e) => updateSetting('channelSecret', e.target.value)}
                 className={inputClasses}
@@ -241,7 +261,7 @@ const App: React.FC = () => {
               </button>
             </div>
             <div className="relative">
-              <textarea 
+              <textarea
                 value={settings.richMenuJson || '{\n  "size": {\n    "width": 2500,\n    "height": 1686\n  },\n  "selected": true,\n  "name": "Default Menu",\n  "chatBarText": "Menu",\n  "areas": []\n}'}
                 onChange={(e) => updateSetting('richMenuJson', e.target.value)}
                 rows={10}
@@ -274,9 +294,77 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-[#f8f9fa] overflow-hidden relative">
+      {/* API Key Modal Overlay */}
+      {showApiKeyInput && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 lg:p-8 animate-fadeIn max-h-[90vh] overflow-y-auto">
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="w-16 h-16 line-gradient rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-green-200">
+                <Rocket className="text-white w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">AI構築を開始しましょう</h2>
+              <p className="text-gray-500 mt-2 text-sm leading-relaxed">
+                本アプリは Google Gemini を使用して LINE 公式アカウントの構築をサポートします。機能を利用するには、あなたの <span className="font-bold text-gray-700">Gemini API Key</span> を入力してください。
+              </p>
+            </div>
+
+            {/* Guide Section */}
+            <div className="bg-gray-50 rounded-2xl p-5 mb-6 border border-gray-100">
+              <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-green-500" />
+                APIキーの取得手順
+              </h3>
+              <ol className="text-xs text-gray-600 space-y-3 list-decimal list-inside">
+                <li><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Google AI Studio</a> にアクセスします。</li>
+                <li>「Get API key」ボタンをクリックします。</li>
+                <li>既存のプロジェクトを選択するか、新規プロジェクトを作成して「Create API key in new project」をクリックします。</li>
+                <li>生成された <span className="font-mono bg-gray-200 px-1 rounded">AIza...</span> から始まる文字列をコピーして、下の入力欄に貼り付けます。</li>
+              </ol>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Gemini API Key</label>
+                <input
+                  type="password"
+                  value={tempApiKey}
+                  onChange={(e) => setTempApiKey(e.target.value)}
+                  placeholder="ここにAPIキーを貼り付け"
+                  className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-green-500 focus:bg-white rounded-2xl transition-all outline-none text-gray-800 font-mono text-sm shadow-inner"
+                />
+              </div>
+
+              <div className="flex items-start gap-3 px-1 py-3 bg-blue-50/50 rounded-xl border border-blue-100/50">
+                <div className="shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                </div>
+                <p className="text-[10px] text-blue-700 leading-normal">
+                  入力されたAPIキーはあなたのブラウザ（LocalStorage）にのみ保存されます。サーバー側に送信されたり、サービス提供者が知ることはありません。
+                </p>
+              </div>
+
+              <button
+                onClick={handleSaveApiKey}
+                disabled={!tempApiKey.trim()}
+                className="w-full line-gradient text-white font-bold py-4 rounded-2xl shadow-lg shadow-green-200 hover:brightness-105 transition-all disabled:opacity-50 disabled:shadow-none mt-2"
+              >
+                AIアシスタントを起動
+              </button>
+
+              <button
+                onClick={() => setShowApiKeyInput(false)}
+                className="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                title="APIキーなしでもUIの確認は可能です。AI機能のみ制限されます。"
+              >
+                あとで設定する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Mobile Overlay */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
@@ -289,7 +377,7 @@ const App: React.FC = () => {
             <div className="w-10 h-10 line-gradient rounded-xl flex items-center justify-center shadow-lg shadow-green-200">
               <Rocket className="text-white w-6 h-6" />
             </div>
-            <h1 className="font-bold text-xl text-gray-800 tracking-tight leading-none">OA Architect<br/><span className="text-[10px] text-green-500 uppercase tracking-widest">LIFF Edition</span></h1>
+            <h1 className="font-bold text-xl text-gray-800 tracking-tight leading-none">OA Architect<br /><span className="text-[10px] text-green-500 uppercase tracking-widest">LIFF Edition</span></h1>
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 text-gray-400">
             <X className="w-6 h-6" />
@@ -297,34 +385,34 @@ const App: React.FC = () => {
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          <SidebarItem 
-            icon={<MessageSquare className="w-5 h-5" />} 
-            label="対話プランニング" 
-            active={currentStep === Step.STRATEGY} 
+          <SidebarItem
+            icon={<MessageSquare className="w-5 h-5" />}
+            label="対話プランニング"
+            active={currentStep === Step.STRATEGY}
             onClick={() => { setCurrentStep(Step.STRATEGY); setMobileTab('chat'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
           />
-          <SidebarItem 
-            icon={<Settings className="w-5 h-5" />} 
-            label="基本設定" 
-            active={currentStep === Step.CONFIG} 
+          <SidebarItem
+            icon={<Settings className="w-5 h-5" />}
+            label="基本設定"
+            active={currentStep === Step.CONFIG}
             onClick={() => { setCurrentStep(Step.CONFIG); setMobileTab('config'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
           />
-          <SidebarItem 
-            icon={<Layout className="w-5 h-5" />} 
-            label="リッチメニュー" 
-            active={currentStep === Step.RICH_MENU} 
+          <SidebarItem
+            icon={<Layout className="w-5 h-5" />}
+            label="リッチメニュー"
+            active={currentStep === Step.RICH_MENU}
             onClick={() => { setCurrentStep(Step.RICH_MENU); setMobileTab('config'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
           />
-          <SidebarItem 
-            icon={<Code className="w-5 h-5" />} 
-            label="API連携" 
-            active={currentStep === Step.MESSAGING} 
+          <SidebarItem
+            icon={<Code className="w-5 h-5" />}
+            label="API連携"
+            active={currentStep === Step.MESSAGING}
             onClick={() => { setCurrentStep(Step.MESSAGING); setMobileTab('config'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
           />
-          <SidebarItem 
-            icon={<Eye className="w-5 h-5" />} 
-            label="全体プレビュー" 
-            active={currentStep === Step.PREVIEW} 
+          <SidebarItem
+            icon={<Eye className="w-5 h-5" />}
+            label="全体プレビュー"
+            active={currentStep === Step.PREVIEW}
             onClick={() => { setCurrentStep(Step.PREVIEW); setMobileTab('preview'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
           />
         </nav>
@@ -340,7 +428,7 @@ const App: React.FC = () => {
               </div>
             </div>
           ) : (
-            <button 
+            <button
               onClick={handleLogin}
               className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all text-sm font-semibold"
             >
@@ -348,7 +436,7 @@ const App: React.FC = () => {
               LINEでログイン
             </button>
           )}
-          
+
           <button className="w-full mt-3 flex items-center justify-center gap-2 line-gradient text-white font-semibold py-3 rounded-xl shadow-lg shadow-green-200 hover:brightness-105 transition-all">
             <CheckCircle2 className="w-5 h-5" />
             <span>完成・デプロイ</span>
@@ -361,7 +449,7 @@ const App: React.FC = () => {
         {/* Header */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center px-4 lg:px-8 justify-between shrink-0 z-30">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(true)}
               className="lg:hidden p-2 -ml-2 text-gray-600"
             >
@@ -374,7 +462,7 @@ const App: React.FC = () => {
               </span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 lg:gap-4">
             <div className="hidden sm:flex h-2 w-16 lg:w-24 bg-gray-100 rounded-full overflow-hidden">
               <div className="h-full bg-green-500 w-2/5 transition-all duration-500"></div>
@@ -385,19 +473,19 @@ const App: React.FC = () => {
 
         {/* Content Tabs (Mobile Only) */}
         <div className="flex lg:hidden bg-white border-b border-gray-200 px-2 shrink-0 overflow-x-auto">
-          <button 
+          <button
             onClick={() => setMobileTab('chat')}
             className={`flex-1 py-3 px-4 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${mobileTab === 'chat' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-400'}`}
           >
             チャット
           </button>
-          <button 
+          <button
             onClick={() => setMobileTab('config')}
             className={`flex-1 py-3 px-4 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${mobileTab === 'config' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-400'}`}
           >
             設定
           </button>
-          <button 
+          <button
             onClick={() => setMobileTab('preview')}
             className={`flex-1 py-3 px-4 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${mobileTab === 'preview' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-400'}`}
           >
@@ -411,11 +499,10 @@ const App: React.FC = () => {
             <div ref={scrollRef} className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-6 bg-gray-50/30">
               {messages.map((m) => (
                 <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[90%] lg:max-w-[85%] rounded-2xl p-3 lg:p-4 shadow-sm border ${
-                    m.role === 'user' 
-                      ? 'bg-green-50 border-green-100 text-green-900 rounded-tr-none' 
-                      : 'bg-white border-gray-100 text-gray-800 rounded-tl-none'
-                  }`}>
+                  <div className={`max-w-[90%] lg:max-w-[85%] rounded-2xl p-3 lg:p-4 shadow-sm border ${m.role === 'user'
+                    ? 'bg-green-50 border-green-100 text-green-900 rounded-tr-none'
+                    : 'bg-white border-gray-100 text-gray-800 rounded-tl-none'
+                    }`}>
                     <p className="whitespace-pre-wrap leading-relaxed text-sm lg:text-base">{m.content}</p>
                     <div className="mt-2 text-[10px] opacity-40">
                       {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -438,7 +525,7 @@ const App: React.FC = () => {
 
             <div className="p-3 lg:p-4 border-t border-gray-100 bg-white shadow-up">
               <div className="relative group flex items-end gap-2 max-w-4xl mx-auto w-full">
-                <textarea 
+                <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -452,7 +539,7 @@ const App: React.FC = () => {
                     target.style.height = `${target.scrollHeight}px`;
                   }}
                 />
-                <button 
+                <button
                   onClick={handleSendMessage}
                   disabled={isLoading || !input.trim()}
                   className="mb-1 p-3 lg:p-3.5 line-gradient text-white rounded-xl shadow-lg disabled:opacity-30 transition-all hover:scale-105 shrink-0"
@@ -474,9 +561,9 @@ const App: React.FC = () => {
             <div className="max-w-xl mx-auto">
               <div className="mb-6 lg:mb-8">
                 <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-2">
-                  {currentStep === Step.STRATEGY ? "構成概要" : 
-                   currentStep === Step.CONFIG ? "基本プロファイル" :
-                   currentStep === Step.RICH_MENU ? "リッチメニュー設計" : "詳細設定"}
+                  {currentStep === Step.STRATEGY ? "構成概要" :
+                    currentStep === Step.CONFIG ? "基本プロファイル" :
+                      currentStep === Step.RICH_MENU ? "リッチメニュー設計" : "詳細設定"}
                 </h2>
                 <p className="text-gray-500 text-xs lg:text-sm">
                   AIとの対話から自動入力されます。直接編集も可能です。
@@ -508,11 +595,11 @@ const App: React.FC = () => {
               <h2 className="text-sm lg:text-lg font-bold text-gray-700">プレビュー</h2>
               <div className="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] lg:text-[10px] font-bold rounded uppercase">Realtime</div>
             </div>
-            
+
             <div className="transform scale-[0.85] sm:scale-90 lg:scale-100 origin-top shrink-0">
               <MobilePreview settings={settings} previewMessages={messages.filter(m => m.id !== '1')} />
             </div>
-            
+
             <div className="mt-4 lg:mt-8 w-full max-w-[320px] bg-white rounded-2xl p-4 shadow-sm border border-gray-200 shrink-0">
               <h3 className="text-[10px] font-bold text-gray-400 uppercase mb-3">Preview Options</h3>
               <div className="space-y-3">
@@ -540,13 +627,12 @@ interface SidebarItemProps {
 
 const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active, onClick }) => {
   return (
-    <button 
+    <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-        active 
-          ? 'bg-green-50 text-green-600 shadow-sm' 
-          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
-      }`}
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${active
+        ? 'bg-green-50 text-green-600 shadow-sm'
+        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
+        }`}
     >
       <span className={`${active ? 'text-green-600' : 'text-gray-400'}`}>
         {icon}

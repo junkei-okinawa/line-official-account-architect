@@ -2,8 +2,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Message, LineOASettings } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-
 const SYSTEM_INSTRUCTION = `
 You are a world-class expert in LINE Official Account (OA) architecture and the Messaging API. 
 Your goal is to help users build a high-converting LINE Official Account interactively.
@@ -19,9 +17,10 @@ If you generate JSON for LINE, wrap it in markdown code blocks labeled with the 
 Always encourage best practices like using Rich Menus for high CTA and Flex Messages for beautiful UI.
 `;
 
-export const chatWithGemini = async (messages: Message[], settings: LineOASettings) => {
-  const model = "gemini-3-pro-preview";
-  
+export const chatWithGemini = async (messages: Message[], settings: LineOASettings, apiKey: string) => {
+  const ai = new GoogleGenAI(apiKey);
+  const model = "gemini-1.5-pro-latest";
+
   const history = messages.map(m => ({
     role: m.role === 'user' ? 'user' as const : 'model' as const,
     parts: [{ text: m.content }]
@@ -36,27 +35,28 @@ export const chatWithGemini = async (messages: Message[], settings: LineOASettin
   Please assist the user with the next steps of building their LINE OA.
   `;
 
-  const response = await ai.models.generateContent({
+  const response = await ai.getGenerativeModel({
     model: model,
+    systemInstruction: SYSTEM_INSTRUCTION,
+  }).generateContent({
     contents: [
       { role: 'user', parts: [{ text: contextPrompt }] },
-      ...history.slice(-5) // Send last 5 for context
+      ...history.slice(-5)
     ],
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
+    generationConfig: {
       temperature: 0.7,
     }
   });
 
-  return response.text;
+  return response.response.text();
 };
 
-export const generateLineConfig = async (prompt: string) => {
-  const model = "gemini-3-flash-preview";
-  const response = await ai.models.generateContent({
+export const generateLineConfig = async (prompt: string, apiKey: string) => {
+  const ai = new GoogleGenAI(apiKey);
+  const model = "gemini-1.5-flash-latest";
+  const result = await ai.getGenerativeModel({
     model: model,
-    contents: [{ parts: [{ text: prompt }] }],
-    config: {
+    generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -69,7 +69,8 @@ export const generateLineConfig = async (prompt: string) => {
         required: ["accountName", "description", "greetingMessage"]
       }
     }
-  });
-  
-  return JSON.parse(response.text);
+  }).generateContent(prompt);
+
+  return JSON.parse(result.response.text());
 };
+
