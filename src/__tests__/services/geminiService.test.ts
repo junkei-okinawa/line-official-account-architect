@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { GeminiError, chatWithGemini } from './geminiService';
-import { Message, LineOASettings } from '../types';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { GeminiError, chatWithGemini } from '../../../services/geminiService';
+import { Message, LineOASettings } from '../../../types';
 
 const mockGenerateContent = vi.fn();
 
