@@ -191,13 +191,13 @@ const App: React.FC = () => {
         }
       }
 
-      const errorMessage: Message = {
+      const errorResponseMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: `⚠️ ${errorMessage}`,
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, errorResponseMessage]);
     } finally {
       setIsLoading(false);
     }
