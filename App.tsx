@@ -1,8 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Message, LineOASettings, Step } from './types';
-import { chatWithGemini, generateLineConfig } from './services/geminiService';
+import { Message, LineOASettings, Step, McpServerConfig } from './types';
+import { chatWithGemini, generateLineConfig, GeminiError } from './services/geminiService';
 import MobilePreview from './components/MobilePreview';
+import McpServerConfigPanel from './components/McpServerConfigPanel';
+import RichMenuControlPanel from './components/RichMenuControlPanel';
+import MessageSendTestUI from './components/MessageSendTestUI';
 import {
   Send,
   MessageSquare,
@@ -65,6 +68,12 @@ const App: React.FC = () => {
   const [showApiKeyInput, setShowApiKeyInput] = useState(!localStorage.getItem('gemini_api_key'));
   const [tempApiKey, setTempApiKey] = useState('');
 
+  // MCP Server State
+  const [mcpConfig, setMcpConfig] = useState<McpServerConfig>(() => {
+    const saved = localStorage.getItem('mcp_server_config');
+    return saved ? JSON.parse(saved) : { serverUrl: '', channelToken: '', enabled: false };
+  });
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // LIFF Initialization
@@ -116,6 +125,12 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    if (mcpConfig.enabled && !localStorage.getItem('mcp_server_config')) {
+      localStorage.setItem('mcp_server_config', JSON.stringify(mcpConfig));
+    }
+  }, [mcpConfig]);
+
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -152,7 +167,37 @@ const App: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error(error);
+      const geminiError = error as GeminiError;
+      let errorMessage = '申し訳ありません。エラーが発生しました。';
+
+      if (geminiError instanceof GeminiError) {
+        switch (geminiError.code) {
+          case 'MISSING_API_KEY':
+            errorMessage = 'Gemini API キーが設定されていません。設定画面から API キーを入力してください。';
+            setShowApiKeyInput(true);
+            break;
+          case 'INVALID_API_KEY':
+            errorMessage = 'API キーが無効です。正しい API キーを入力してください。';
+            setShowApiKeyInput(true);
+            break;
+          case 'RATE_LIMITED':
+            errorMessage = 'リクエストが多すぎます。しばらく待ってからもう一度お試しください。';
+            break;
+          case 'SERVER_ERROR':
+            errorMessage = 'Gemini サーバーに一時的な問題が発生しました。しばらく待ってからもう一度お試しください。';
+            break;
+          default:
+            errorMessage = geminiError.message;
+        }
+      }
+
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `⚠️ ${errorMessage}`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
