@@ -1,1 +1,4 @@
-{"include": ["*.json", "*.ts", "*.tsx"], "exclude": ["node_modules/**", "dist/**"]}
+{
+  "*.{js,jsx,ts,tsx,json}": ["prettier --write", "eslint --fix"],
+  "*.md": ["prettier --write"]
+}
