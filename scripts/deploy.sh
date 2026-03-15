@@ -34,7 +34,7 @@ fi
 
 # Build the project
 echo "🔨 Building project..."
-npm run build
+yarn build
 
 # Verify build output
 if [ ! -d "dist" ]; then
