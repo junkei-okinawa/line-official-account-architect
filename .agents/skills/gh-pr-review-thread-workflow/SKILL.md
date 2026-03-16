@@ -40,27 +40,27 @@ gh api graphql \
   -F name="REPO" \
   -F number=2 \
   -f query='
-    query($owner: String!, $name: String!, $number: Int!) {
-      repository(owner: $owner, name: $name) {
-        pullRequest(number: $number) {
-          reviewThreads(last: 100) {
+query($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      reviewThreads(last: 100) {
+        nodes {
+          id
+          isResolved
+          isOutdated
+          comments(first: 50) {
             nodes {
               id
-              isResolved
-              isOutdated
-              comments(first: 50) {
-                nodes {
-                  id
-                  author { login }
-                  body
-                  createdAt
-                }
-              }
+              author { login }
+              body
+              createdAt
             }
           }
         }
       }
-    }'
+    }
+  }
+}'
 ```
 
 Focus on `isResolved: false` threads. Determine whether each latest reviewer comment needs changes.
@@ -69,36 +69,88 @@ Focus on `isResolved: false` threads. Determine whether each latest reviewer com
 
 If no change needed, reply with the rationale. If changes needed, implement changes first, then reply with what was done.
 
+**Important Guidelines:**
+- Do NOT include reviewer mention (@username) in replies - it is not required
+- Use actual line breaks (real newlines) instead of escaped `\n` characters in body text
+- Ensure each thread receives exactly ONE reply before proceeding to resolution
+
 Reply mutation:
 
 ```bash
 gh api graphql \
   -F threadId="PRRT_xxx" \
-  -f body="Reason or fix summary here." \
   -f query='
-    mutation($threadId: ID!, $body: String!) {
-      addPullRequestReviewThreadReply(
-        input: { pullRequestReviewThreadId: $threadId, body: $body }
-      ) { __typename }
-    }'
+mutation($threadId: ID!, $body: String!) {
+  addPullRequestReviewThreadReply(
+    input: { pullRequestReviewThreadId: $threadId, body: $body }
+  ) { __typename }
+}' \
+  -f body="Reason or fix summary here."
 ```
 
-### 5. Resolve All Threads After Replies
+### 5. Verify No Duplicate Comments Before Resolution
 
-Resolve each replied thread:
+**CRITICAL CHECK**: Before resolving any thread, verify that exactly one reply has been posted to each thread. This prevents duplicate replies and ensures no threads are missed.
+
+To check for duplicates:
 
 ```bash
 gh api graphql \
-  -F threadId="PRRT_xxx" \
+  -F owner="OWNER" \
+  -F name="REPO" \  
+  -F number=PR_NUMBER \
   -f query='
-    mutation($threadId: ID!) {
-      resolveReviewThread(input: { threadId: $threadId }) {
-        thread { id }
+query($owner: String!, $name: String!, $number: Int!, $threadId: ID!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      reviewThreads(first: 10) {
+        nodes {
+          id
+          isResolved
+          comments(last: 10) {
+            totalCount
+            edges {
+              node {
+                author { login }
+                body
+              }
+            }
+          }
+        }
       }
-    }'
+    }
+  }
+}' \
+  -F threadId="PRRT_xxx"
+```
+
+Look for threads where `comments.totalCount > 1` and multiple replies are from the same author. If duplicates found, either delete them or proceed only if confirmed as intentional.
+
+### 6. Resolve All Threads After Verification
+
+Only resolve a thread after:
+- ✅ Exactly ONE reply has been posted (no duplicates)
+- ✅ No other threads were missed in this PR review cycle
+
+Resolve each verified thread:
+
+```bash
+gh api graphql \
+  -F owner="OWNER" \
+  -F name="REPO" \
+  -F number=PR_NUMBER \
+  -f query='
+mutation($threadId: ID!) {
+  resolveReviewThread(input: { threadId: $threadId }) {
+    thread { id }
+  }
+}' \
+  -F threadId="PRRT_xxx"
 ```
 
 ### Notes
 
 - `addPullRequestReviewThreadReply` uses `pullRequestReviewThreadId` (not `threadId`) in the input object.
-- Resolve only after every thread has a reply.
+- Resolve only after every thread has been verified to have exactly ONE reply.
+- Always check for duplicate comments before resolving any thread.
+- Ensure no threads are missed - all non-resolved threads from step 3 should be processed.
