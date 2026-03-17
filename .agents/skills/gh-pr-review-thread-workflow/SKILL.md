@@ -7,7 +7,15 @@ description: Use when you need to fetch PR review threads via gh api graphql, ju
 
 ## Overview
 
-Fetch PR review threads with `gh api graphql`, decide whether each comment needs changes, post thread replies with rationale or results, then resolve all threads.
+**AUTONOMOUS OPERATION**: This workflow handles PR review comments automatically without requiring user confirmation for each new comment. The agent will:
+
+1. Fetch all unresolved review threads from the specified PR
+2. Analyze each comment to determine if code changes are needed
+3. Implement fixes or post explanatory replies as appropriate
+4. Verify no duplicate comments exist before resolution
+5. Resolve all processed threads automatically
+
+**No user confirmation is required for new review comments - proceed with handling them immediately.**
 
 ## Workflow
 
@@ -47,13 +55,15 @@ query($owner: String!, $name: String!, $number: Int!) {
         nodes {
           id
           isResolved
-          isOutdated
           comments(first: 50) {
-            nodes {
-              id
-              author { login }
-              body
-              createdAt
+            totalCount
+            edges {
+              node {
+                id
+                author { login }
+                body
+                createdAt
+              }
             }
           }
         }
@@ -63,7 +73,14 @@ query($owner: String!, $name: String!, $number: Int!) {
 }'
 ```
 
-Focus on `isResolved: false` threads. Determine whether each latest reviewer comment needs changes.
+**AUTONOMOUS HANDLING**: When new review comments are detected:
+
+- ✅ **Do NOT ask for user confirmation** - proceed immediately with handling
+- ✅ Analyze each `isResolved: false` thread to determine required action
+- ✅ Implement code changes if needed, or post explanatory reply if already addressed
+- ✅ Continue processing all unresolved threads until complete
+
+Focus on threads where `comments.totalCount > 1` (indicating replies exist) and `isResolved: false`. Determine whether each latest reviewer comment needs changes.
 
 ### 4. Decide Response and Reply in Thread
 
@@ -152,7 +169,10 @@ mutation($threadId: ID!) {
 
 ### Notes
 
-- `addPullRequestReviewThreadReply` uses `pullRequestReviewThreadId` (not `threadId`) in the input object.
-- Resolve only after every thread has been verified to have exactly ONE reply.
-- Always check for duplicate comments before resolving any thread.
-- Ensure no threads are missed - all non-resolved threads from step 3 should be processed.
+**AUTONOMOUS OPERATION GUIDELINES:**
+
+- ✅ **No user confirmation required** for new review comments - handle them immediately
+- ✅ `addPullRequestReviewThreadReply` uses `pullRequestReviewThreadId` (not `threadId`) in the input object.
+- ✅ Resolve only after every thread has been verified to have exactly ONE reply.
+- ✅ Always check for duplicate comments before resolving any thread.
+- ✅ Ensure no threads are missed - all non-resolved threads from step 3 should be processed.
