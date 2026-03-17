@@ -17,6 +17,7 @@
     },
     "noEmit": true,
     "strict": false,
-    "skipDefaultLibCheck": true
+    "skipDefaultLibCheck": true,
+    "exclude": ["coverage", "dist", "node_modules"]
   }
 }
