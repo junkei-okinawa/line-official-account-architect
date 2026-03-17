@@ -78,7 +78,11 @@ export class McpService {
    * 接続状態を取得
    */
   isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN && !!this.config;
+    if (!this.ws || !this.config || typeof WebSocket === 'undefined') {
+      return false;
+    }
+
+    return this.ws.readyState === WebSocket.OPEN;
   }
 
   /**
