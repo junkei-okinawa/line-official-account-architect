@@ -91,6 +91,7 @@ If no change needed, reply with the rationale. If changes needed, implement chan
 - Do NOT include reviewer mention (@username) in replies - it is not required
 - Use actual line breaks (real newlines) instead of escaped `\n` characters in body text
 - Ensure each thread receives exactly ONE reply before proceeding to resolution
+- If code changes are required, make small incremental commits and push them before posting any reply comment
 
 Reply mutation:
 
