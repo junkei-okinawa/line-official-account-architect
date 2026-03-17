@@ -38,7 +38,7 @@ const RichMenuControlPanel: React.FC<RichMenuControlPanelProps> = ({ mcpConfig }
   "name": "Default Menu",
   "chatBarText": "メニュー",
   "areas": [
-    ${[...Array(8)].map((_, i) => `    { "bounds": { "left": ${(i % 4) * 625}, "top": (Math.floor(i / 4) * 843) }, "action": {"type": "message", "text": "メニュー${i + 1}"}}`).join(',\n')}
+    ${[...Array(8)].map((_, i) => `    { "bounds": { "left": ${(i % 4) * 625}, "top": ${Math.floor(i / 4) * 843} }, "action": {"type": "message", "text": "メニュー${i + 1}"}}`).join(',\n')}
   ]
 }`;
 
