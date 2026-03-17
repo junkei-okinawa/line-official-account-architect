@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    environment: 'jsdom',
+    environment: 'happy-dom',
     setupFiles: './src/test/setup.ts',
     // Scope tests to src directory only to avoid picking up node_modules tests
     include: ['src/**/*.test.{ts,tsx}'],
