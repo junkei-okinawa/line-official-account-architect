@@ -1,8 +1,9 @@
 import js from '@eslint/js';
 import tseslang from 'typescript-eslint';
+import globals from 'globals';
 
 export default [
-  { ignores: ['dist', 'node_modules'] },
+  { ignores: ['dist', 'node_modules', '.pnp.cjs', '.pnp.loader.mjs', 'coverage'] },
 
   js.configs.recommended,
   ...tseslang.configs.recommended,
@@ -10,7 +11,10 @@ export default [
   {
     languageOptions: {
       parser: tseslang.parser,
-      globals: {}, // No global declarations - use env from configs above instead
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
     },
 
     plugins: {
