@@ -17,8 +17,8 @@ export default defineConfig({
         'src/test/',
         '**/*.d.ts',
         // Exclude entry point files from coverage as they are thin wrappers
-        '**/index.tsx'
-      ]
-    }
-  }
+        '**/index.tsx',
+      ],
+    },
+  },
 });

@@ -1,4 +1,4 @@
-import { McpServerConfig, RichMenuOperationResult, MessageSendTestResult } from "../types";
+import { McpServerConfig, RichMenuOperationResult, MessageSendTestResult } from '../types';
 
 /**
  * MCP サーバーとの通信サービス
@@ -6,7 +6,12 @@ import { McpServerConfig, RichMenuOperationResult, MessageSendTestResult } from 
 export class McpService {
   private ws: WebSocket | null = null;
   private config: McpServerConfig | null = null;
-  private messageQueue: Array<{ id: number; data: any; resolve: (value: any) => void, reject: (reason?: any) => void }> = [];
+  private messageQueue: Array<{
+    id: number;
+    data: any;
+    resolve: (value: any) => void;
+    reject: (reason?: any) => void;
+  }> = [];
   private messageIdCounter = 0;
 
   /**
@@ -90,7 +95,7 @@ export class McpService {
     try {
       const response = await this.sendRequest({
         method: 'richmenu.' + action,
-        params: data || {}
+        params: data || {},
       });
 
       if (response.error) {
@@ -100,7 +105,7 @@ export class McpService {
       return {
         success: true,
         richMenuId: response.result?.richMenuId,
-        message: response.result?.message || '操作が完了しました'
+        message: response.result?.message || '操作が完了しました',
       };
     } catch (error) {
       console.error('リッチメニュー操作エラー:', error);
@@ -126,8 +131,8 @@ export class McpService {
         params: {
           to: toUserId,
           type: messageType,
-          message: content
-        }
+          message: content,
+        },
       });
 
       if (response.error) {
@@ -137,7 +142,7 @@ export class McpService {
       return {
         success: true,
         messageId: response.result?.messageId || response.result?.success,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     } catch (error) {
       console.error('メッセージ送信エラー:', error);
@@ -165,7 +170,7 @@ export class McpService {
       const message = {
         jsonrpc: '2.0',
         id,
-        ...request
+        ...request,
       };
 
       if (this.ws?.readyState === WebSocket.OPEN) {

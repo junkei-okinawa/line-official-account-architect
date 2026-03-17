@@ -1,4 +1,3 @@
-
 export interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -18,9 +17,9 @@ export interface LineOASettings {
 }
 
 export interface McpServerConfig {
-  serverUrl: string;        // MCP サーバー URL (例：ws://localhost:3000)
-  channelToken: string;     // LINE Channel Token
-  enabled: boolean;         // MCP サーバー接続有効フラグ
+  serverUrl: string; // MCP サーバー URL (例：ws://localhost:3000)
+  channelToken: string; // LINE Channel Token
+  enabled: boolean; // MCP サーバー接続有効フラグ
 }
 
 export interface RichMenuOperationResult {
@@ -43,5 +42,5 @@ export enum Step {
   RICH_MENU = 'RICH_MENU',
   MESSAGING = 'MESSAGING',
   PREVIEW = 'PREVIEW',
-  MCP_INTEGRATION = 'MCP_INTEGRATION'
+  MCP_INTEGRATION = 'MCP_INTEGRATION',
 }

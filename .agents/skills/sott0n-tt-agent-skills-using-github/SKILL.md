@@ -1,6 +1,6 @@
 ---
 name: using-github
-description: "Operates GitHub via gh CLI. Use when user wants to view PRs, commits, issues, or perform git blame."
+description: 'Operates GitHub via gh CLI. Use when user wants to view PRs, commits, issues, or perform git blame.'
 ---
 
 # Using GitHub
@@ -27,11 +27,13 @@ uname -s
 ```
 
 **macOS (Homebrew):**
+
 ```bash
 brew install gh
 ```
 
 **Ubuntu/Debian:**
+
 ```bash
 (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)) \
   && sudo mkdir -p -m 755 /etc/apt/keyrings \
@@ -65,45 +67,45 @@ This is interactive - let the user complete it manually.
 
 ### Pull Requests
 
-| Command | Description |
-|---------|-------------|
-| `gh pr list` | List open PRs |
-| `gh pr view <number>` | View PR details |
-| `gh pr diff <number>` | Show PR diff |
-| `gh pr checks <number>` | View CI status |
-| `gh pr comments <number>` | View PR comments |
+| Command                                               | Description                    |
+| ----------------------------------------------------- | ------------------------------ |
+| `gh pr list`                                          | List open PRs                  |
+| `gh pr view <number>`                                 | View PR details                |
+| `gh pr diff <number>`                                 | Show PR diff                   |
+| `gh pr checks <number>`                               | View CI status                 |
+| `gh pr comments <number>`                             | View PR comments               |
 | `gh api repos/{owner}/{repo}/pulls/{number}/comments` | Get PR review comments via API |
 
 ### Commits
 
-| Command | Description |
-|---------|-------------|
-| `git log --oneline -n 20` | Recent commits |
+| Command                                     | Description            |
+| ------------------------------------------- | ---------------------- |
+| `git log --oneline -n 20`                   | Recent commits         |
 | `gh api repos/{owner}/{repo}/commits/{sha}` | Commit details via API |
-| `gh browse <sha>` | Open commit in browser |
+| `gh browse <sha>`                           | Open commit in browser |
 
 ### Git Blame
 
-| Command | Description |
-|---------|-------------|
-| `git blame <file>` | Show line-by-line authorship |
-| `git blame -L 10,20 <file>` | Blame specific line range |
-| `git blame -L :functionName <file>` | Blame specific function |
-| `git log --follow -p <file>` | Full file history with diffs |
+| Command                             | Description                  |
+| ----------------------------------- | ---------------------------- |
+| `git blame <file>`                  | Show line-by-line authorship |
+| `git blame -L 10,20 <file>`         | Blame specific line range    |
+| `git blame -L :functionName <file>` | Blame specific function      |
+| `git log --follow -p <file>`        | Full file history with diffs |
 
 ### Issues
 
-| Command | Description |
-|---------|-------------|
-| `gh issue list` | List open issues |
+| Command                  | Description        |
+| ------------------------ | ------------------ |
+| `gh issue list`          | List open issues   |
 | `gh issue view <number>` | View issue details |
-| `gh issue create` | Create new issue |
+| `gh issue create`        | Create new issue   |
 
 ### Repository Info
 
-| Command | Description |
-|---------|-------------|
-| `gh repo view` | View repo details |
+| Command                       | Description       |
+| ----------------------------- | ----------------- |
+| `gh repo view`                | View repo details |
 | `gh api repos/{owner}/{repo}` | Repo info via API |
 
 ---
@@ -115,49 +117,54 @@ When you need to manage PR review threads (reply to comments, resolve discussion
 ### Key Mutations for Review Thread Management
 
 #### 1. Add Reply to Review Thread
+
 ```bash
 gh api graphql -F threadId="PRRT_<thread_id>" \
   -f body='✅ コメントの返信内容' \
-  -f query='mutation($threadId: ID!, $body: String!) { 
-    addPullRequestReviewThreadReply(input: { pullRequestReviewThreadId: $threadId, body: $body }) { __typename } 
+  -f query='mutation($threadId: ID!, $body: String!) {
+    addPullRequestReviewThreadReply(input: { pullRequestReviewThreadId: $threadId, body: $body }) { __typename }
   }'
 ```
 
 **Important**: Use `pullRequestReviewThreadId` (not `threadId`) as the parameter name!
 
 #### 2. Delete Single Comment in Thread
+
 ```bash
 gh api graphql -F commentId="PRRC_<comment_id>" \
-  -f query='mutation($commentId: ID!) { 
-    deletePullRequestReviewComment(input: { id: $commentId }) { clientMutationId } 
+  -f query='mutation($commentId: ID!) {
+    deletePullRequestReviewComment(input: { id: $commentId }) { clientMutationId }
   }'
 ```
 
 #### 3. Resolve Review Thread
+
 ```bash
 gh api graphql -F threadId="PRRT_<thread_id>" \
-  -f query='mutation($threadId: ID!) { 
-    resolveReviewThread(input: { threadId: $threadId }) { thread { id } } 
+  -f query='mutation($threadId: ID!) {
+    resolveReviewThread(input: { threadId: $threadId }) { thread { id } }
   }'
 ```
 
 #### 4. Get Review Threads with Comments
+
 ```bash
 gh api graphql -F number=2 \
-  -f query='query($number: Int!) { 
-    repository(owner: "junkei-okinawa", name: "line-official-account-architect") { 
-      pullRequest(number: $number) { 
-        reviewThreads(last: 100) { 
-          nodes { id isResolved comments(first: 50) { nodes { id body createdAt } } } 
-        } 
-      } 
-    } 
+  -f query='query($number: Int!) {
+    repository(owner: "junkei-okinawa", name: "line-official-account-architect") {
+      pullRequest(number: $number) {
+        reviewThreads(last: 100) {
+          nodes { id isResolved comments(first: 50) { nodes { id body createdAt } } }
+        }
+      }
+    }
   }' | jq '.data.repository.pullRequest.reviewThreads.nodes[] | .id as $tid | .comments.nodes[] | select(.body | contains("✅")) | {threadId: $tid, commentId: .id}'
 ```
 
 ### Common Patterns
 
 #### Pattern A: Delete Single Comment → Post Thread Reply
+
 When a single comment was posted instead of a thread reply:
 
 1. **Get the comment ID** within each review thread
@@ -165,7 +172,9 @@ When a single comment was posted instead of a thread reply:
 3. **Post proper thread reply**: `addPullRequestReviewThreadReply`
 
 #### Pattern B: Bulk Resolve All Threads
+
 After replying to all threads, resolve them in parallel:
+
 ```bash
 gh api graphql -F threadId="PRRT_..." -f query='...' && \
 gh api graphql -F threadId="PRRT_..." -f query='...' && \
@@ -174,15 +183,16 @@ gh api graphql -F threadId="PRRT_..." -f query='...' && \
 
 ### Variable Naming Gotchas
 
-| Mutation | Input Object | Parameter Name |
-|----------|--------------|----------------|
+| Mutation                          | Input Object                           | Parameter Name                               |
+| --------------------------------- | -------------------------------------- | -------------------------------------------- |
 | `addPullRequestReviewThreadReply` | `AddPullRequestReviewThreadReplyInput` | `pullRequestReviewThreadId` (NOT `threadId`) |
-| `resolveReviewThread` | `ResolveReviewThreadInput` | `threadId` |
-| `deletePullRequestReviewComment` | `DeletePullRequestReviewCommentInput` | `id` |
+| `resolveReviewThread`             | `ResolveReviewThreadInput`             | `threadId`                                   |
+| `deletePullRequestReviewComment`  | `DeletePullRequestReviewCommentInput`  | `id`                                         |
 
 ### Payload Field Names
 
 Some mutations return different payload structures:
+
 - `addPullRequestReviewThreadReply` → `AddPullRequestReviewThreadPayload` (no `replyEdge`)
 - Use `__typename` to check the response type if unsure
 

@@ -70,6 +70,7 @@ Focus on `isResolved: false` threads. Determine whether each latest reviewer com
 If no change needed, reply with the rationale. If changes needed, implement changes first, then reply with what was done.
 
 **Important Guidelines:**
+
 - Do NOT include reviewer mention (@username) in replies - it is not required
 - Use actual line breaks (real newlines) instead of escaped `\n` characters in body text
 - Ensure each thread receives exactly ONE reply before proceeding to resolution
@@ -97,7 +98,7 @@ To check for duplicates:
 ```bash
 gh api graphql \
   -F owner="OWNER" \
-  -F name="REPO" \  
+  -F name="REPO" \
   -F number=PR_NUMBER \
   -f query='
 query($owner: String!, $name: String!, $number: Int!, $threadId: ID!) {
@@ -129,6 +130,7 @@ Look for threads where `comments.totalCount > 1` and multiple replies are from t
 ### 6. Resolve All Threads After Verification
 
 Only resolve a thread after:
+
 - ✅ Exactly ONE reply has been posted (no duplicates)
 - ✅ No other threads were missed in this PR review cycle
 

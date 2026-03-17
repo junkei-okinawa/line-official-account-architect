@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, LineOASettings, Step, McpServerConfig } from './types';
 import { chatWithGemini, generateLineConfig, GeminiError } from './services/geminiService';
@@ -22,7 +21,7 @@ import {
   Copy,
   ChevronRight,
   User as UserIcon,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 
 // LIFF型の定義（グローバルなliffオブジェクトを使用するため）
@@ -33,9 +32,10 @@ const App: React.FC = () => {
     {
       id: '1',
       role: 'assistant',
-      content: 'こんにちは！LINE公式アカウントの構築をサポートするAIです。どんなアカウントを作りたいですか？（例：カフェの予約、ECサイトの顧客対応、など）',
-      timestamp: new Date()
-    }
+      content:
+        'こんにちは！LINE公式アカウントの構築をサポートするAIです。どんなアカウントを作りたいですか？（例：カフェの予約、ECサイトの顧客対応、など）',
+      timestamp: new Date(),
+    },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +47,7 @@ const App: React.FC = () => {
     channelSecret: '',
     channelAccessToken: '',
     greetingMessage: '友だち追加ありがとうございます！',
-    richMenuJson: ''
+    richMenuJson: '',
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<'chat' | 'config' | 'preview'>('chat');
@@ -60,7 +60,7 @@ const App: React.FC = () => {
   }>({
     isInit: false,
     error: null,
-    profile: null
+    profile: null,
   });
 
   // API Key State
@@ -82,27 +82,32 @@ const App: React.FC = () => {
       try {
         // Check if LIFF SDK is loaded
         if (typeof liff === 'undefined') {
-          console.error("LIFF SDK not found. Please check your internet connection and script tag.");
-          setLiffState({ isInit: true, error: "SDK not loaded", profile: null });
+          console.error(
+            'LIFF SDK not found. Please check your internet connection and script tag.'
+          );
+          setLiffState({ isInit: true, error: 'SDK not loaded', profile: null });
           return;
         }
 
         // LIFF IDは本番環境では環境変数などから取得しますが、
         // ここではデモンストレーション用に初期化エラーを許容する構成にします。
-        await liff.init({ liffId: "YOUR_LIFF_ID_HERE" }).catch((err: any) => {
-          console.warn("LIFF initialization failed. This might be a local browser environment.", err);
-          setLiffState(prev => ({ ...prev, isInit: true }));
+        await liff.init({ liffId: 'YOUR_LIFF_ID_HERE' }).catch((err: any) => {
+          console.warn(
+            'LIFF initialization failed. This might be a local browser environment.',
+            err
+          );
+          setLiffState((prev) => ({ ...prev, isInit: true }));
         });
 
         if (liff.isLoggedIn()) {
           const profile = await liff.getProfile();
           setLiffState({ isInit: true, error: null, profile });
         } else {
-          setLiffState(prev => ({ ...prev, isInit: true }));
+          setLiffState((prev) => ({ ...prev, isInit: true }));
         }
       } catch (e) {
-        console.error("LIFF initialization error", e);
-        setLiffState({ isInit: true, error: "Initialization error", profile: null });
+        console.error('LIFF initialization error', e);
+        setLiffState({ isInit: true, error: 'Initialization error', profile: null });
       }
     };
     initLiff();
@@ -138,10 +143,10 @@ const App: React.FC = () => {
       id: Date.now().toString(),
       role: 'user',
       content: input,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
@@ -151,18 +156,18 @@ const App: React.FC = () => {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response || '申し訳ありません。エラーが発生しました。',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
 
       if (settings.accountName === '' && input.length > 5) {
         const config = await generateLineConfig(input, apiKey);
         if (config) {
-          setSettings(prev => ({
+          setSettings((prev) => ({
             ...prev,
             accountName: config.accountName || prev.accountName,
             description: config.description || prev.description,
-            greetingMessage: config.greetingMessage || prev.greetingMessage
+            greetingMessage: config.greetingMessage || prev.greetingMessage,
           }));
         }
       }
@@ -173,7 +178,8 @@ const App: React.FC = () => {
       if (geminiError instanceof GeminiError) {
         switch (geminiError.code) {
           case 'MISSING_API_KEY':
-            errorMessage = 'Gemini API キーが設定されていません。設定画面から API キーを入力してください。';
+            errorMessage =
+              'Gemini API キーが設定されていません。設定画面から API キーを入力してください。';
             setShowApiKeyInput(true);
             break;
           case 'INVALID_API_KEY':
@@ -184,7 +190,8 @@ const App: React.FC = () => {
             errorMessage = 'リクエストが多すぎます。しばらく待ってからもう一度お試しください。';
             break;
           case 'SERVER_ERROR':
-            errorMessage = 'Gemini サーバーに一時的な問題が発生しました。しばらく待ってからもう一度お試しください。';
+            errorMessage =
+              'Gemini サーバーに一時的な問題が発生しました。しばらく待ってからもう一度お試しください。';
             break;
           default:
             errorMessage = geminiError.message;
@@ -195,16 +202,16 @@ const App: React.FC = () => {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: `⚠️ ${errorMessage}`,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorResponseMessage]);
+      setMessages((prev) => [...prev, errorResponseMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const updateSetting = (key: keyof LineOASettings, value: string) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -229,7 +236,8 @@ const App: React.FC = () => {
   };
 
   const renderConfigStep = () => {
-    const inputClasses = "w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all";
+    const inputClasses =
+      'w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all';
 
     switch (currentStep) {
       case Step.CONFIG:
@@ -256,7 +264,9 @@ const App: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">あいさつメッセージ</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                あいさつメッセージ
+              </label>
               <textarea
                 value={settings.greetingMessage}
                 onChange={(e) => updateSetting('greetingMessage', e.target.value)}
@@ -307,7 +317,10 @@ const App: React.FC = () => {
             </div>
             <div className="relative">
               <textarea
-                value={settings.richMenuJson || '{\n  "size": {\n    "width": 2500,\n    "height": 1686\n  },\n  "selected": true,\n  "name": "Default Menu",\n  "chatBarText": "Menu",\n  "areas": []\n}'}
+                value={
+                  settings.richMenuJson ||
+                  '{\n  "size": {\n    "width": 2500,\n    "height": 1686\n  },\n  "selected": true,\n  "name": "Default Menu",\n  "chatBarText": "Menu",\n  "areas": []\n}'
+                }
                 onChange={(e) => updateSetting('richMenuJson', e.target.value)}
                 rows={10}
                 className="w-full px-4 py-2 font-mono text-xs rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-green-500 outline-none"
@@ -349,7 +362,9 @@ const App: React.FC = () => {
               </div>
               <h2 className="text-2xl font-bold text-gray-900">AI構築を開始しましょう</h2>
               <p className="text-gray-500 mt-2 text-sm leading-relaxed">
-                本アプリは Google Gemini を使用して LINE 公式アカウントの構築をサポートします。機能を利用するには、あなたの <span className="font-bold text-gray-700">Gemini API Key</span> を入力してください。
+                本アプリは Google Gemini を使用して LINE
+                公式アカウントの構築をサポートします。機能を利用するには、あなたの{' '}
+                <span className="font-bold text-gray-700">Gemini API Key</span> を入力してください。
               </p>
             </div>
 
@@ -360,16 +375,34 @@ const App: React.FC = () => {
                 APIキーの取得手順
               </h3>
               <ol className="text-xs text-gray-600 space-y-3 list-decimal list-inside">
-                <li><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Google AI Studio</a> にアクセスします。</li>
+                <li>
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-600 hover:underline font-bold"
+                  >
+                    Google AI Studio
+                  </a>{' '}
+                  にアクセスします。
+                </li>
                 <li>「Get API key」ボタンをクリックします。</li>
-                <li>既存のプロジェクトを選択するか、新規プロジェクトを作成して「Create API key in new project」をクリックします。</li>
-                <li>生成された <span className="font-mono bg-gray-200 px-1 rounded">AIza...</span> から始まる文字列をコピーして、下の入力欄に貼り付けます。</li>
+                <li>
+                  既存のプロジェクトを選択するか、新規プロジェクトを作成して「Create API key in new
+                  project」をクリックします。
+                </li>
+                <li>
+                  生成された <span className="font-mono bg-gray-200 px-1 rounded">AIza...</span>{' '}
+                  から始まる文字列をコピーして、下の入力欄に貼り付けます。
+                </li>
               </ol>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Gemini API Key</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
+                  Gemini API Key
+                </label>
                 <input
                   type="password"
                   value={tempApiKey}
@@ -416,13 +449,21 @@ const App: React.FC = () => {
       )}
 
       {/* Sidebar Navigation */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 bg-white border-r border-gray-200 w-72 flex flex-col transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-50 bg-white border-r border-gray-200 w-72 flex flex-col transition-transform duration-300 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+      >
         <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 line-gradient rounded-xl flex items-center justify-center shadow-lg shadow-green-200">
               <Rocket className="text-white w-6 h-6" />
             </div>
-            <h1 className="font-bold text-xl text-gray-800 tracking-tight leading-none">OA Architect<br /><span className="text-[10px] text-green-500 uppercase tracking-widest">LIFF Edition</span></h1>
+            <h1 className="font-bold text-xl text-gray-800 tracking-tight leading-none">
+              OA Architect
+              <br />
+              <span className="text-[10px] text-green-500 uppercase tracking-widest">
+                LIFF Edition
+              </span>
+            </h1>
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 text-gray-400">
             <X className="w-6 h-6" />
@@ -434,31 +475,51 @@ const App: React.FC = () => {
             icon={<MessageSquare className="w-5 h-5" />}
             label="対話プランニング"
             active={currentStep === Step.STRATEGY}
-            onClick={() => { setCurrentStep(Step.STRATEGY); setMobileTab('chat'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
+            onClick={() => {
+              setCurrentStep(Step.STRATEGY);
+              setMobileTab('chat');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
           />
           <SidebarItem
             icon={<Settings className="w-5 h-5" />}
             label="基本設定"
             active={currentStep === Step.CONFIG}
-            onClick={() => { setCurrentStep(Step.CONFIG); setMobileTab('config'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
+            onClick={() => {
+              setCurrentStep(Step.CONFIG);
+              setMobileTab('config');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
           />
           <SidebarItem
             icon={<Layout className="w-5 h-5" />}
             label="リッチメニュー"
             active={currentStep === Step.RICH_MENU}
-            onClick={() => { setCurrentStep(Step.RICH_MENU); setMobileTab('config'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
+            onClick={() => {
+              setCurrentStep(Step.RICH_MENU);
+              setMobileTab('config');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
           />
           <SidebarItem
             icon={<Code className="w-5 h-5" />}
             label="API連携"
             active={currentStep === Step.MESSAGING}
-            onClick={() => { setCurrentStep(Step.MESSAGING); setMobileTab('config'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
+            onClick={() => {
+              setCurrentStep(Step.MESSAGING);
+              setMobileTab('config');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
           />
           <SidebarItem
             icon={<Eye className="w-5 h-5" />}
             label="全体プレビュー"
             active={currentStep === Step.PREVIEW}
-            onClick={() => { setCurrentStep(Step.PREVIEW); setMobileTab('preview'); if (window.innerWidth < 1024) setIsSidebarOpen(false); }}
+            onClick={() => {
+              setCurrentStep(Step.PREVIEW);
+              setMobileTab('preview');
+              if (window.innerWidth < 1024) setIsSidebarOpen(false);
+            }}
           />
         </nav>
 
@@ -466,9 +527,15 @@ const App: React.FC = () => {
         <div className="p-4 border-t border-gray-100 shrink-0">
           {liffState.profile ? (
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
-              <img src={liffState.profile.pictureUrl} alt="" className="w-10 h-10 rounded-full border-2 border-green-200" />
+              <img
+                src={liffState.profile.pictureUrl}
+                alt=""
+                className="w-10 h-10 rounded-full border-2 border-green-200"
+              />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-gray-800 truncate">{liffState.profile.displayName}</p>
+                <p className="text-xs font-bold text-gray-800 truncate">
+                  {liffState.profile.displayName}
+                </p>
                 <p className="text-[10px] text-gray-400">Connected via LINE</p>
               </div>
             </div>
@@ -501,9 +568,11 @@ const App: React.FC = () => {
               <MenuIcon className="w-6 h-6" />
             </button>
             <div className="flex flex-col lg:flex-row lg:items-center lg:gap-2">
-              <span className="text-[10px] lg:text-sm font-medium text-gray-500">プロジェクト:</span>
+              <span className="text-[10px] lg:text-sm font-medium text-gray-500">
+                プロジェクト:
+              </span>
               <span className="text-sm lg:text-sm font-bold text-gray-800 truncate max-w-[120px] lg:max-w-none">
-                {settings.accountName || "名称未設定"}
+                {settings.accountName || '名称未設定'}
               </span>
             </div>
           </div>
@@ -512,7 +581,9 @@ const App: React.FC = () => {
             <div className="hidden sm:flex h-2 w-16 lg:w-24 bg-gray-100 rounded-full overflow-hidden">
               <div className="h-full bg-green-500 w-2/5 transition-all duration-500"></div>
             </div>
-            <span className="text-[9px] lg:text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">Progress: 40%</span>
+            <span className="text-[9px] lg:text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
+              Progress: 40%
+            </span>
           </div>
         </header>
 
@@ -540,15 +611,28 @@ const App: React.FC = () => {
 
         <div className="flex-1 overflow-hidden flex relative">
           {/* Chat Side */}
-          <div className={`flex-1 flex flex-col ${mobileTab === 'chat' ? 'flex' : 'hidden lg:flex'} border-r border-gray-200 bg-white relative`}>
-            <div ref={scrollRef} className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-6 bg-gray-50/30">
+          <div
+            className={`flex-1 flex flex-col ${mobileTab === 'chat' ? 'flex' : 'hidden lg:flex'} border-r border-gray-200 bg-white relative`}
+          >
+            <div
+              ref={scrollRef}
+              className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-6 bg-gray-50/30"
+            >
               {messages.map((m) => (
-                <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[90%] lg:max-w-[85%] rounded-2xl p-3 lg:p-4 shadow-sm border ${m.role === 'user'
-                    ? 'bg-green-50 border-green-100 text-green-900 rounded-tr-none'
-                    : 'bg-white border-gray-100 text-gray-800 rounded-tl-none'
-                    }`}>
-                    <p className="whitespace-pre-wrap leading-relaxed text-sm lg:text-base">{m.content}</p>
+                <div
+                  key={m.id}
+                  className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[90%] lg:max-w-[85%] rounded-2xl p-3 lg:p-4 shadow-sm border ${
+                      m.role === 'user'
+                        ? 'bg-green-50 border-green-100 text-green-900 rounded-tr-none'
+                        : 'bg-white border-gray-100 text-gray-800 rounded-tl-none'
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap leading-relaxed text-sm lg:text-base">
+                      {m.content}
+                    </p>
                     <div className="mt-2 text-[10px] opacity-40">
                       {m.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
@@ -602,13 +686,19 @@ const App: React.FC = () => {
           </div>
 
           {/* Config Side */}
-          <div className={`flex-1 p-6 lg:p-8 overflow-y-auto bg-white ${mobileTab === 'config' ? 'block' : 'hidden lg:block'}`}>
+          <div
+            className={`flex-1 p-6 lg:p-8 overflow-y-auto bg-white ${mobileTab === 'config' ? 'block' : 'hidden lg:block'}`}
+          >
             <div className="max-w-xl mx-auto">
               <div className="mb-6 lg:mb-8">
                 <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-2">
-                  {currentStep === Step.STRATEGY ? "構成概要" :
-                    currentStep === Step.CONFIG ? "基本プロファイル" :
-                      currentStep === Step.RICH_MENU ? "リッチメニュー設計" : "詳細設定"}
+                  {currentStep === Step.STRATEGY
+                    ? '構成概要'
+                    : currentStep === Step.CONFIG
+                      ? '基本プロファイル'
+                      : currentStep === Step.RICH_MENU
+                        ? 'リッチメニュー設計'
+                        : '詳細設定'}
                 </h2>
                 <p className="text-gray-500 text-xs lg:text-sm">
                   AIとの対話から自動入力されます。直接編集も可能です。
@@ -635,18 +725,27 @@ const App: React.FC = () => {
           </div>
 
           {/* Preview Panel */}
-          <aside className={`w-full lg:w-[350px] xl:w-[400px] border-l border-gray-200 bg-[#f0f2f5] p-4 lg:p-8 overflow-y-auto shrink-0 ${mobileTab === 'preview' ? 'flex' : 'hidden lg:flex'} flex-col items-center`}>
+          <aside
+            className={`w-full lg:w-[350px] xl:w-[400px] border-l border-gray-200 bg-[#f0f2f5] p-4 lg:p-8 overflow-y-auto shrink-0 ${mobileTab === 'preview' ? 'flex' : 'hidden lg:flex'} flex-col items-center`}
+          >
             <div className="w-full mb-6 flex items-center justify-between shrink-0">
               <h2 className="text-sm lg:text-lg font-bold text-gray-700">プレビュー</h2>
-              <div className="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] lg:text-[10px] font-bold rounded uppercase">Realtime</div>
+              <div className="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] lg:text-[10px] font-bold rounded uppercase">
+                Realtime
+              </div>
             </div>
 
             <div className="transform scale-[0.85] sm:scale-90 lg:scale-100 origin-top shrink-0">
-              <MobilePreview settings={settings} previewMessages={messages.filter(m => m.id !== '1')} />
+              <MobilePreview
+                settings={settings}
+                previewMessages={messages.filter((m) => m.id !== '1')}
+              />
             </div>
 
             <div className="mt-4 lg:mt-8 w-full max-w-[320px] bg-white rounded-2xl p-4 shadow-sm border border-gray-200 shrink-0">
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase mb-3">Preview Options</h3>
+              <h3 className="text-[10px] font-bold text-gray-400 uppercase mb-3">
+                Preview Options
+              </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] text-gray-600">通知プレビュー</span>
@@ -674,15 +773,16 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active, onClick 
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${active
-        ? 'bg-green-50 text-green-600 shadow-sm'
-        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
-        }`}
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+        active
+          ? 'bg-green-50 text-green-600 shadow-sm'
+          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
+      }`}
     >
-      <span className={`${active ? 'text-green-600' : 'text-gray-400'}`}>
-        {icon}
+      <span className={`${active ? 'text-green-600' : 'text-gray-400'}`}>{icon}</span>
+      <span className="text-sm font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
+        {label}
       </span>
-      <span className="text-sm font-semibold whitespace-nowrap overflow-hidden text-ellipsis">{label}</span>
       {active && <ChevronRight className="ml-auto w-4 h-4 text-green-400 shrink-0" />}
     </button>
   );

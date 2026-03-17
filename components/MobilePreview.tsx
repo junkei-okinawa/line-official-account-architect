@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LineOASettings, Message } from '../types';
 import { User, Send, ChevronLeft, MoreHorizontal, Smile } from 'lucide-react';
@@ -20,7 +19,9 @@ const MobilePreview: React.FC<MobilePreviewProps> = ({ settings, previewMessages
       <div className="bg-[#1e1e1e] text-white pt-8 pb-3 px-4 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center gap-2">
           <ChevronLeft className="w-5 h-5" />
-          <span className="font-bold truncate max-w-[150px]">{settings.accountName || "New Account"}</span>
+          <span className="font-bold truncate max-w-[150px]">
+            {settings.accountName || 'New Account'}
+          </span>
         </div>
         <div className="flex gap-3">
           <Send className="w-4 h-4 rotate-[-45deg]" />
@@ -39,23 +40,30 @@ const MobilePreview: React.FC<MobilePreviewProps> = ({ settings, previewMessages
         {settings.greetingMessage && (
           <div className="flex gap-2">
             <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0">
-              {settings.accountName?.charAt(0) || "L"}
+              {settings.accountName?.charAt(0) || 'L'}
             </div>
             <div className="bg-white rounded-2xl rounded-tl-none p-3 shadow-sm max-w-[80%]">
-              <p className="text-xs text-gray-800 whitespace-pre-wrap">{settings.greetingMessage}</p>
+              <p className="text-xs text-gray-800 whitespace-pre-wrap">
+                {settings.greetingMessage}
+              </p>
             </div>
           </div>
         )}
 
         {/* Mock Messages */}
         {previewMessages.map((m) => (
-          <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-2`}>
+          <div
+            key={m.id}
+            className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-2`}
+          >
             {m.role === 'assistant' && (
               <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-[10px] text-white font-bold shrink-0">
-                {settings.accountName?.charAt(0) || "L"}
+                {settings.accountName?.charAt(0) || 'L'}
               </div>
             )}
-            <div className={`${m.role === 'user' ? 'bg-[#76f16d] rounded-tr-none' : 'bg-white rounded-tl-none'} rounded-2xl p-3 shadow-sm max-w-[80%]`}>
+            <div
+              className={`${m.role === 'user' ? 'bg-[#76f16d] rounded-tr-none' : 'bg-white rounded-tl-none'} rounded-2xl p-3 shadow-sm max-w-[80%]`}
+            >
               <p className="text-xs text-gray-800">{m.content}</p>
             </div>
           </div>
@@ -64,9 +72,12 @@ const MobilePreview: React.FC<MobilePreviewProps> = ({ settings, previewMessages
 
       {/* Rich Menu Placeholder */}
       <div className="absolute bottom-[56px] inset-x-0 h-32 bg-gray-100 border-t border-gray-300 grid grid-cols-3 grid-rows-2">
-        {[1, 2, 3, 4, 5, 6].map(i => (
-          <div key={i} className="border-[0.5px] border-gray-200 flex items-center justify-center text-[10px] text-gray-400 font-medium">
-             Menu {i}
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div
+            key={i}
+            className="border-[0.5px] border-gray-200 flex items-center justify-center text-[10px] text-gray-400 font-medium"
+          >
+            Menu {i}
           </div>
         ))}
         <div className="absolute top-[-20px] left-1/2 -translate-x-1/2 bg-gray-200 px-3 py-1 rounded-t-lg text-[8px] text-gray-600 border border-b-0 border-gray-300">
