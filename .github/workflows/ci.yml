@@ -27,7 +27,7 @@ jobs:
         run: yarn install --immutable
 
       - name: Run linter
-        run: yarn lint 2>/dev/null || echo "No linter configured"
+        run: yarn lint
 
       - name: Run tests
         run: yarn test:run
