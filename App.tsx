@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Message, LineOASettings, Step, McpServerConfig } from './types';
 import { chatWithGemini, generateLineConfig, GeminiError } from './services/geminiService';
 import MobilePreview from './components/MobilePreview';
+import McpServerConfigPanel from './components/McpServerConfigPanel';
+import MessageSendTestUI from './components/MessageSendTestUI';
+import RichMenuControlPanel from './components/RichMenuControlPanel';
 import {
   Send,
   MessageSquare,
@@ -77,7 +80,7 @@ const App: React.FC = () => {
   const [tempApiKey, setTempApiKey] = useState('');
 
   // MCP Server State
-  const [mcpConfig] = useState<McpServerConfig>(() => {
+  const [mcpConfig, setMcpConfig] = useState<McpServerConfig>(() => {
     const saved = localStorage.getItem('mcp_server_config');
     return saved ? JSON.parse(saved) : { serverUrl: '', channelToken: '', enabled: false };
   });
@@ -139,9 +142,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (mcpConfig.enabled && !localStorage.getItem('mcp_server_config')) {
-      localStorage.setItem('mcp_server_config', JSON.stringify(mcpConfig));
-    }
+    localStorage.setItem('mcp_server_config', JSON.stringify(mcpConfig));
   }, [mcpConfig]);
 
   const handleSendMessage = async () => {
@@ -287,7 +288,7 @@ const App: React.FC = () => {
         );
       case Step.MESSAGING:
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg flex gap-3">
               <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0" />
               <p className="text-xs text-yellow-700">
@@ -311,6 +312,12 @@ const App: React.FC = () => {
                 onChange={(e) => updateSetting('channelSecret', e.target.value)}
                 className={inputClasses}
               />
+            </div>
+
+            <div className="border-t border-gray-100 pt-6 space-y-6">
+              <McpServerConfigPanel initialConfig={mcpConfig} onSave={setMcpConfig} />
+              <RichMenuControlPanel mcpConfig={mcpConfig} />
+              <MessageSendTestUI mcpConfig={mcpConfig} />
             </div>
           </div>
         );

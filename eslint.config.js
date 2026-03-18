@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tseslang from 'typescript-eslint';
 import globals from 'globals';
+import prettierConfig from 'eslint-config-prettier';
 
 export default [
   { ignores: ['dist', 'node_modules', '.pnp.cjs', '.pnp.loader.mjs', 'coverage'] },
@@ -32,4 +33,5 @@ export default [
   },
 
   { files: ['**/*.{js,jsx,ts,tsx}'], languageOptions: { globals: { React: 'readonly' } } },
+  prettierConfig,
 ];
