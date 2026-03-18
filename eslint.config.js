@@ -26,7 +26,7 @@ export default [
 
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_[a-z]*$|e$', varsIgnorePattern: '^_' }, // Allow error param `e` or `_e` in catch blocks
+        { argsIgnorePattern: '^(_[a-z]*|e)$', varsIgnorePattern: '^_' }, // Allow error param `e` or `_e` in catch blocks
       ],
     },
   },

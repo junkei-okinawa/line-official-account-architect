@@ -147,5 +147,14 @@ export const generateLineConfig = async (prompt: string, apiKey: string) => {
     },
   });
 
-  return JSON.parse(result.text ?? '{}');
+  const text = result.text;
+  if (!text || text.trim() === '') {
+    throw new GeminiError('AI から JSON が返されませんでした。', 'EMPTY_RESPONSE');
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new GeminiError('AI から不正な JSON が返されました。', 'INVALID_JSON', error);
+  }
 };
