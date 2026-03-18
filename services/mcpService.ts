@@ -106,10 +106,13 @@ export class McpService {
         return { success: false, error: response.error.message };
       }
 
+      const richMenuId = asString(response.result?.richMenuId);
+      const message = asString(response.result?.message) ?? '操作が完了しました';
+
       return {
         success: true,
-        richMenuId: response.result?.richMenuId,
-        message: response.result?.message || '操作が完了しました',
+        richMenuId,
+        message,
       };
     } catch (error) {
       console.error('リッチメニュー操作エラー:', error);
@@ -143,9 +146,11 @@ export class McpService {
         return { success: false, error: response.error.message, timestamp: new Date() };
       }
 
+      const messageId = asString(response.result?.messageId) ?? asString(response.result?.success);
+
       return {
         success: true,
-        messageId: response.result?.messageId || response.result?.success,
+        messageId,
         timestamp: new Date(),
       };
     } catch (error) {
@@ -234,6 +239,9 @@ type JsonRpcResponse = {
   result?: Record<string, unknown>;
   error?: JsonRpcError;
 };
+
+const asString = (value: unknown): string | undefined =>
+  typeof value === 'string' ? value : undefined;
 
 // シングルトンインスタンス
 export const mcpService = new McpService();

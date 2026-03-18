@@ -40,7 +40,7 @@ export const chatWithGemini = async (
   }
 
   try {
-    const ai = new GoogleGenAI(apiKey);
+    const ai = new GoogleGenAI({ apiKey });
     const model = 'gemini-1.5-pro-latest';
 
     const history = messages.map((m) => ({
@@ -57,19 +57,16 @@ export const chatWithGemini = async (
     Please assist the user with the next steps of building their LINE OA.
     `;
 
-    const response = await ai
-      .getGenerativeModel({
-        model: model,
+    const response = await ai.models.generateContent({
+      model,
+      contents: [{ role: 'user', parts: [{ text: contextPrompt }] }, ...history.slice(-5)],
+      config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-      })
-      .generateContent({
-        contents: [{ role: 'user', parts: [{ text: contextPrompt }] }, ...history.slice(-5)],
-        generationConfig: {
-          temperature: 0.7,
-        },
-      });
+        temperature: 0.7,
+      },
+    });
 
-    const result = response.response.text();
+    const result = response.text;
 
     if (!result || result.trim() === '') {
       throw new GeminiError(
@@ -130,26 +127,25 @@ export const chatWithGemini = async (
 };
 
 export const generateLineConfig = async (prompt: string, apiKey: string) => {
-  const ai = new GoogleGenAI(apiKey);
+  const ai = new GoogleGenAI({ apiKey });
   const model = 'gemini-1.5-flash-latest';
-  const result = await ai
-    .getGenerativeModel({
-      model: model,
-      generationConfig: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            accountName: { type: Type.STRING },
-            description: { type: Type.STRING },
-            greetingMessage: { type: Type.STRING },
-            suggestedRichMenuStructure: { type: Type.STRING },
-          },
-          required: ['accountName', 'description', 'greetingMessage'],
+  const result = await ai.models.generateContent({
+    model,
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          accountName: { type: Type.STRING },
+          description: { type: Type.STRING },
+          greetingMessage: { type: Type.STRING },
+          suggestedRichMenuStructure: { type: Type.STRING },
         },
+        required: ['accountName', 'description', 'greetingMessage'],
       },
-    })
-    .generateContent(prompt);
+    },
+  });
 
-  return JSON.parse(result.response.text());
+  return JSON.parse(result.text ?? '{}');
 };
