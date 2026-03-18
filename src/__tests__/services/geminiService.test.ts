@@ -7,11 +7,9 @@ const mockGenerateContent = vi.fn();
 vi.mock('@google/genai', () => ({
   GoogleGenAI: class {
     constructor() {}
-    getGenerativeModel() {
-      return {
-        generateContent: mockGenerateContent,
-      };
-    }
+    models = {
+      generateContent: mockGenerateContent,
+    };
   },
 }));
 
@@ -98,7 +96,7 @@ describe('chatWithGemini', () => {
 
   it('should throw EMPTY_RESPONSE error when response is empty', async () => {
     mockGenerateContent.mockResolvedValue({
-      response: { text: vi.fn().mockReturnValue('') },
+      text: '',
     });
 
     await expect(chatWithGemini(mockMessages, mockSettings, 'valid-key')).rejects.toThrow(
@@ -114,7 +112,7 @@ describe('chatWithGemini', () => {
     const expectedResponse = 'This is a test response';
 
     mockGenerateContent.mockResolvedValue({
-      response: { text: vi.fn().mockReturnValue(expectedResponse) },
+      text: expectedResponse,
     });
 
     const result = await chatWithGemini(mockMessages, mockSettings, 'valid-key');
