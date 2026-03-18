@@ -2,9 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Message, LineOASettings, Step, McpServerConfig } from './types';
 import { chatWithGemini, generateLineConfig, GeminiError } from './services/geminiService';
 import MobilePreview from './components/MobilePreview';
-import McpServerConfigPanel from './components/McpServerConfigPanel';
-import RichMenuControlPanel from './components/RichMenuControlPanel';
-import MessageSendTestUI from './components/MessageSendTestUI';
 import {
   Send,
   MessageSquare,
@@ -25,7 +22,7 @@ import {
 } from 'lucide-react';
 
 // LIFF型の定義（グローバルなliffオブジェクトを使用するため）
-declare const liff: any;
+// LIFF type inferred from usage
 
 const App: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([

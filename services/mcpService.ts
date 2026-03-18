@@ -209,7 +209,7 @@ export class McpService {
   /**
    * レスポンスを処理（内部）
    */
-  private handleResponse(response: any): void {
+  private handleResponse(_response: any): void {
     // 現在はこの実装ではキュー処理を使用
     this.processQueue();
   }

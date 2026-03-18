@@ -4,7 +4,6 @@ import { mcpService } from '../services/mcpService';
 import {
   Layout,
   RefreshCw,
-  Send as SendIcon,
   Upload,
   CheckCircle2,
   XCircle,

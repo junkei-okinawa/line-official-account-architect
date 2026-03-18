@@ -3,7 +3,6 @@ import { MessageSendTestResult, McpServerConfig } from '../types';
 import { mcpService } from '../services/mcpService';
 import {
   MessageSquare,
-  Send as SendIcon,
   Loader2,
   CheckCircle2,
   XCircle,
@@ -73,7 +72,7 @@ const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
       if (messageType === 'flex') {
         try {
           content = JSON.parse(testFlexJson);
-        } catch (e) {
+        } catch (_e) {
           alert('Flex Message JSON が無効です');
           return;
         }
