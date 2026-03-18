@@ -8,9 +8,9 @@ export class McpService {
   private config: McpServerConfig | null = null;
   private messageQueue: Array<{
     id: number;
-    data: any;
-    resolve: (value: any) => void;
-    reject: (reason?: any) => void;
+    data: unknown;
+    resolve: (value: JsonRpcResponse) => void;
+    reject: (reason?: unknown) => void;
   }> = [];
   private messageIdCounter = 0;
 
@@ -90,7 +90,7 @@ export class McpService {
    */
   async richMenuOperation(
     action: 'generate' | 'upload' | 'register' | 'delete' | 'list',
-    data?: any
+    data?: Record<string, unknown>
   ): Promise<RichMenuOperationResult> {
     if (!this.isConnected()) {
       return { success: false, error: 'MCP サーバーに接続されていません' };
@@ -123,7 +123,7 @@ export class McpService {
   async testMessageSend(
     toUserId: string,
     messageType: 'text' | 'flex',
-    content: any
+    content: string | Record<string, unknown>
   ): Promise<MessageSendTestResult> {
     if (!this.isConnected()) {
       return { success: false, error: 'MCP サーバーに接続されていません', timestamp: new Date() };
@@ -168,7 +168,10 @@ export class McpService {
   /**
    * リクエストを送信（内部）
    */
-  private sendRequest(request: { method: string; params?: any }): Promise<any> {
+  private sendRequest(request: {
+    method: string;
+    params?: Record<string, unknown>;
+  }): Promise<JsonRpcResponse> {
     return new Promise((resolve, reject) => {
       const id = this.messageIdCounter++;
       const message = {
@@ -188,13 +191,13 @@ export class McpService {
         // レスポンスハンドラーを一時登録
         const handler = (event: MessageEvent) => {
           try {
-            const response = JSON.parse(event.data);
+            const response = JSON.parse(event.data) as JsonRpcResponse;
             if (response.id === id) {
               this.ws?.removeEventListener('message', handler);
               clearTimeout(timeoutId);
               resolve(response);
             }
-          } catch (e) {
+          } catch {
             // 解析エラーは無視
           }
         };
@@ -209,7 +212,7 @@ export class McpService {
   /**
    * レスポンスを処理（内部）
    */
-  private handleResponse(_response: any): void {
+  private handleResponse(_response: JsonRpcResponse): void {
     // 現在はこの実装ではキュー処理を使用
     this.processQueue();
   }
@@ -221,6 +224,16 @@ export class McpService {
     // 現在のところキューは使用しないが、将来の拡張のために予約
   }
 }
+
+type JsonRpcError = {
+  message: string;
+};
+
+type JsonRpcResponse = {
+  id?: number;
+  result?: Record<string, unknown>;
+  error?: JsonRpcError;
+};
 
 // シングルトンインスタンス
 export const mcpService = new McpService();

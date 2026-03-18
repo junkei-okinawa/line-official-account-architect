@@ -21,8 +21,19 @@ import {
   Loader2,
 } from 'lucide-react';
 
-// LIFF型の定義（グローバルなliffオブジェクトを使用するため）
-// LIFF type inferred from usage
+type LiffProfile = {
+  userId: string;
+  displayName: string;
+  pictureUrl?: string;
+  statusMessage?: string;
+};
+
+declare const liff: {
+  init: (options: { liffId: string }) => Promise<void>;
+  isLoggedIn: () => boolean;
+  getProfile: () => Promise<LiffProfile>;
+  login: () => void;
+};
 
 const App: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -53,7 +64,7 @@ const App: React.FC = () => {
   const [liffState, setLiffState] = useState<{
     isInit: boolean;
     error: string | null;
-    profile: any | null;
+    profile: LiffProfile | null;
   }>({
     isInit: false,
     error: null,
@@ -66,7 +77,7 @@ const App: React.FC = () => {
   const [tempApiKey, setTempApiKey] = useState('');
 
   // MCP Server State
-  const [mcpConfig, setMcpConfig] = useState<McpServerConfig>(() => {
+  const [mcpConfig] = useState<McpServerConfig>(() => {
     const saved = localStorage.getItem('mcp_server_config');
     return saved ? JSON.parse(saved) : { serverUrl: '', channelToken: '', enabled: false };
   });
@@ -88,7 +99,7 @@ const App: React.FC = () => {
 
         // LIFF IDは本番環境では環境変数などから取得しますが、
         // ここではデモンストレーション用に初期化エラーを許容する構成にします。
-        await liff.init({ liffId: 'YOUR_LIFF_ID_HERE' }).catch((err: any) => {
+        await liff.init({ liffId: 'YOUR_LIFF_ID_HERE' }).catch((err: unknown) => {
           console.warn(
             'LIFF initialization failed. This might be a local browser environment.',
             err
@@ -102,8 +113,8 @@ const App: React.FC = () => {
         } else {
           setLiffState((prev) => ({ ...prev, isInit: true }));
         }
-      } catch (e) {
-        console.error('LIFF initialization error', e);
+      } catch (error) {
+        console.error('LIFF initialization error', error);
         setLiffState({ isInit: true, error: 'Initialization error', profile: null });
       }
     };

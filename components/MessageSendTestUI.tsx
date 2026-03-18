@@ -15,6 +15,8 @@ interface MessageSendTestUIProps {
   mcpConfig: McpServerConfig;
 }
 
+type FlexMessageContent = Record<string, unknown>;
+
 const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
   const [isConnected, setIsConnected] = useState(mcpService.isConnected());
   const [testUserId, setTestUserId] = useState('');
@@ -68,11 +70,16 @@ const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
     setIsSending(true);
 
     try {
-      let content: any;
+      let content: string | FlexMessageContent;
       if (messageType === 'flex') {
         try {
-          content = JSON.parse(testFlexJson);
-        } catch (_e) {
+          const parsed = JSON.parse(testFlexJson) as unknown;
+          if (typeof parsed !== 'object' || parsed === null) {
+            alert('Flex Message JSON が無効です');
+            return;
+          }
+          content = parsed as FlexMessageContent;
+        } catch {
           alert('Flex Message JSON が無効です');
           return;
         }
