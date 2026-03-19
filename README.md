@@ -1,20 +1,59 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# LINE Official Account Architect
 
-# Run and deploy your AI Studio app
+LINE公式アカウント向けの運用支援を想定したフロントエンドツールです。メッセージ送信のテストや、リッチメニューのJSON生成・登録などを行うためのUIを提供します。
 
-This contains everything you need to run your app locally.
+## できること
 
-View your app in AI Studio: https://ai.studio/apps/drive/1B77KftTqZUTf380pYSWM8M6GEcEbB-FF
+- MCP サーバー設定の管理
+- メッセージ送信テスト
+- リッチメニューの JSON 生成、画像アップロード、ユーザー登録
 
-## Run Locally
+## 必要要件
 
-**Prerequisites:**  Node.js
+- Node.js 20+
+- Yarn Berry (corepack)
 
+## セットアップ
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+corepack enable
+corepack prepare yarn@stable --activate
+
+yarn install --immutable
+```
+
+## 開発
+
+```bash
+yarn dev
+```
+
+## テスト
+
+```bash
+yarn test
+yarn test:run
+yarn test:coverage
+```
+
+## Lint / Format
+
+```bash
+yarn lint
+yarn lint:fix
+```
+
+## Yarn ポリシー
+
+- Yarn Berry + PnP を使用します（`node_modules` は使いません）
+- ゼロインストールは採用しません（`.yarn/cache` はコミットしません）
+- `.pnp.cjs` と `.pnp.loader.mjs` はリポジトリに含めます
+
+## 主要スクリプト
+
+- `yarn dev` 開発サーバー起動
+- `yarn build` ビルド
+- `yarn test` テスト（watch）
+- `yarn test:run` テスト（CI向け）
+- `yarn lint` Lint
+- `yarn lint:fix` Lint + Fix

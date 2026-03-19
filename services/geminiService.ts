@@ -1,6 +1,5 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
-import { Message, LineOASettings } from "../types";
+import { GoogleGenAI, Type } from '@google/genai';
+import { Message, LineOASettings } from '../types';
 
 const SYSTEM_INSTRUCTION = `
 You are a world-class expert in LINE Official Account (OA) architecture and the Messaging API. 
@@ -28,7 +27,11 @@ export class GeminiError extends Error {
   }
 }
 
-export const chatWithGemini = async (messages: Message[], settings: LineOASettings, apiKey: string): Promise<string> => {
+export const chatWithGemini = async (
+  messages: Message[],
+  settings: LineOASettings,
+  apiKey: string
+): Promise<string> => {
   if (!apiKey) {
     throw new GeminiError(
       'Gemini API キーが設定されていません。設定画面から API キーを入力してください。',
@@ -37,12 +40,12 @@ export const chatWithGemini = async (messages: Message[], settings: LineOASettin
   }
 
   try {
-    const ai = new GoogleGenAI(apiKey);
-    const model = "gemini-1.5-pro-latest";
+    const ai = new GoogleGenAI({ apiKey });
+    const model = 'gemini-1.5-pro-latest';
 
-    const history = messages.map(m => ({
-      role: m.role === 'user' ? 'user' as const : 'model' as const,
-      parts: [{ text: m.content }]
+    const history = messages.map((m) => ({
+      role: m.role === 'user' ? ('user' as const) : ('model' as const),
+      parts: [{ text: m.content }],
     }));
 
     const contextPrompt = `
@@ -54,21 +57,17 @@ export const chatWithGemini = async (messages: Message[], settings: LineOASettin
     Please assist the user with the next steps of building their LINE OA.
     `;
 
-    const response = await ai.getGenerativeModel({
-      model: model,
-      systemInstruction: SYSTEM_INSTRUCTION,
-    }).generateContent({
-      contents: [
-        { role: 'user', parts: [{ text: contextPrompt }] },
-        ...history.slice(-5)
-      ],
-      generationConfig: {
+    const response = await ai.models.generateContent({
+      model,
+      contents: [{ role: 'user', parts: [{ text: contextPrompt }] }, ...history.slice(-5)],
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.7,
-      }
+      },
     });
 
-    const result = response.response.text();
-    
+    const result = response.text;
+
     if (!result || result.trim() === '') {
       throw new GeminiError(
         'AI から応答が返されませんでした。もう一度お試しください。',
@@ -83,7 +82,7 @@ export const chatWithGemini = async (messages: Message[], settings: LineOASettin
     }
 
     const errObj = error as Record<string, unknown>;
-    
+
     // Extract code from nested structure if needed
     let errorCode: string | undefined;
     if (typeof errObj.code === 'string') {
@@ -91,10 +90,13 @@ export const chatWithGemini = async (messages: Message[], settings: LineOASettin
     }
 
     const errorMessage = errObj.message || '';
-    
+
     // Check for status code in error message as fallback
-    const hasStatusInMessage = String(errorMessage).includes('401') || String(errorMessage).includes('429') || String(errorMessage).includes('500');
-    
+    const hasStatusInMessage =
+      String(errorMessage).includes('401') ||
+      String(errorMessage).includes('429') ||
+      String(errorMessage).includes('500');
+
     if (errorCode === '401' || (hasStatusInMessage && String(errorMessage).includes('401'))) {
       throw new GeminiError(
         'API キーが無効です。正しい API キーを入力してください。',
@@ -125,25 +127,34 @@ export const chatWithGemini = async (messages: Message[], settings: LineOASettin
 };
 
 export const generateLineConfig = async (prompt: string, apiKey: string) => {
-  const ai = new GoogleGenAI(apiKey);
-  const model = "gemini-1.5-flash-latest";
-  const result = await ai.getGenerativeModel({
-    model: model,
-    generationConfig: {
-      responseMimeType: "application/json",
+  const ai = new GoogleGenAI({ apiKey });
+  const model = 'gemini-1.5-flash-latest';
+  const result = await ai.models.generateContent({
+    model,
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
       responseSchema: {
         type: Type.OBJECT,
         properties: {
           accountName: { type: Type.STRING },
           description: { type: Type.STRING },
           greetingMessage: { type: Type.STRING },
-          suggestedRichMenuStructure: { type: Type.STRING }
+          suggestedRichMenuStructure: { type: Type.STRING },
         },
-        required: ["accountName", "description", "greetingMessage"]
-      }
-    }
-  }).generateContent(prompt);
+        required: ['accountName', 'description', 'greetingMessage'],
+      },
+    },
+  });
 
-  return JSON.parse(result.response.text());
+  const text = result.text;
+  if (!text || text.trim() === '') {
+    throw new GeminiError('AI から JSON が返されませんでした。', 'EMPTY_RESPONSE');
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new GeminiError('AI から不正な JSON が返されました。', 'INVALID_JSON', error);
+  }
 };
-

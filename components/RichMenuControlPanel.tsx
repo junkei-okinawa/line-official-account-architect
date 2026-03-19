@@ -4,13 +4,12 @@ import { mcpService } from '../services/mcpService';
 import {
   Layout,
   RefreshCw,
-  Send as SendIcon,
   Upload,
   CheckCircle2,
   XCircle,
   Loader2,
   Image as ImageIcon,
-  Copy
+  Copy,
 } from 'lucide-react';
 
 interface RichMenuControlPanelProps {
@@ -23,7 +22,9 @@ const RichMenuControlPanel: React.FC<RichMenuControlPanelProps> = ({ mcpConfig }
   const [isUploading, setIsUploading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [operationResult, setOperationResult] = useState<RichMenuOperationResult | null>(null);
-  const [richMenuList, setRichMenuList] = useState<Array<{ richMenuId: string; name?: string }>>([]);
+  const [richMenuList, setRichMenuList] = useState<Array<{ richMenuId: string; name?: string }>>(
+    []
+  );
   const [selectedRichMenuId, setSelectedRichMenuId] = useState<string | null>(null);
 
   // リッチメニュー JSON テンプレート
@@ -36,7 +37,7 @@ const RichMenuControlPanel: React.FC<RichMenuControlPanelProps> = ({ mcpConfig }
   "name": "Default Menu",
   "chatBarText": "メニュー",
   "areas": [
-    ${[...Array(8)].map((_, i) => `    { "bounds": { "left": ${i % 4 * 625}, "top": (Math.floor(i / 4) * 843) }, "action": {"type": "message", "text": "メニュー${i + 1}"}}`).join(',\n')}
+    ${[...Array(8)].map((_, i) => `    { "bounds": { "left": ${(i % 4) * 625}, "top": ${Math.floor(i / 4) * 843} }, "action": {"type": "message", "text": "メニュー${i + 1}"}}`).join(',\n')}
   ]
 }`;
 
@@ -115,7 +116,9 @@ const RichMenuControlPanel: React.FC<RichMenuControlPanelProps> = ({ mcpConfig }
     setOperationResult(null);
 
     try {
-      const result = await mcpService.richMenuOperation('register', { richMenuId: selectedRichMenuId });
+      const result = await mcpService.richMenuOperation('register', {
+        richMenuId: selectedRichMenuId,
+      });
 
       if (result.success) {
         setOperationResult({ ...result, message: 'リッチメニューが登録されました' });
@@ -137,7 +140,9 @@ const RichMenuControlPanel: React.FC<RichMenuControlPanelProps> = ({ mcpConfig }
     }
 
     try {
-      const result = await mcpService.richMenuOperation('delete', { richMenuId: selectedRichMenuId || '' });
+      const result = await mcpService.richMenuOperation('delete', {
+        richMenuId: selectedRichMenuId || '',
+      });
 
       if (result.success) {
         setOperationResult({ ...result, message: 'リッチメニューが削除されました' });
@@ -219,7 +224,9 @@ const RichMenuControlPanel: React.FC<RichMenuControlPanelProps> = ({ mcpConfig }
 
         <button
           onClick={handleRegisterRichMenu}
-          disabled={!isConnected || isGenerating || isUploading || isRegistering || !selectedRichMenuId}
+          disabled={
+            !isConnected || isGenerating || isUploading || isRegistering || !selectedRichMenuId
+          }
           className="flex flex-col items-center justify-center p-4 bg-green-50 border-2 border-green-200 rounded-xl hover:bg-green-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
         >
           {isRegistering ? (
@@ -232,7 +239,9 @@ const RichMenuControlPanel: React.FC<RichMenuControlPanelProps> = ({ mcpConfig }
 
         <button
           onClick={handleDeleteRichMenu}
-          disabled={!isConnected || isGenerating || isUploading || isRegistering || !selectedRichMenuId}
+          disabled={
+            !isConnected || isGenerating || isUploading || isRegistering || !selectedRichMenuId
+          }
           className="flex flex-col items-center justify-center p-4 bg-red-50 border-2 border-red-200 rounded-xl hover:bg-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
         >
           <XCircle className="w-6 h-6 text-red-600 mb-1 group-hover:scale-110 transition-transform" />
@@ -262,7 +271,9 @@ const RichMenuControlPanel: React.FC<RichMenuControlPanelProps> = ({ mcpConfig }
 
       {/* 操作結果表示 */}
       {operationResult && (
-        <div className={`rounded-lg p-3 mb-4 flex items-start gap-2 ${operationResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+        <div
+          className={`rounded-lg p-3 mb-4 flex items-start gap-2 ${operationResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}
+        >
           {operationResult.success ? (
             <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
           ) : (
@@ -296,8 +307,12 @@ const RichMenuControlPanel: React.FC<RichMenuControlPanelProps> = ({ mcpConfig }
                 className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between ${selectedRichMenuId === menu.richMenuId ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
               >
                 <div className="flex items-center gap-2">
-                  <ImageIcon className={`w-4 h-4 ${selectedRichMenuId === menu.richMenuId ? 'text-blue-600' : 'text-gray-400'}`} />
-                  <span className="text-sm font-medium text-gray-800">{menu.name || `メニュー ${menu.richMenuId.slice(0, 8)}`}</span>
+                  <ImageIcon
+                    className={`w-4 h-4 ${selectedRichMenuId === menu.richMenuId ? 'text-blue-600' : 'text-gray-400'}`}
+                  />
+                  <span className="text-sm font-medium text-gray-800">
+                    {menu.name || `メニュー ${menu.richMenuId.slice(0, 8)}`}
+                  </span>
                 </div>
                 {selectedRichMenuId === menu.richMenuId && (
                   <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />

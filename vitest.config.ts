@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    environment: 'jsdom',
+    environment: 'happy-dom',
     setupFiles: './src/test/setup.ts',
     // Scope tests to src directory only to avoid picking up node_modules tests
     include: ['src/**/*.test.{ts,tsx}'],
@@ -17,8 +17,8 @@ export default defineConfig({
         'src/test/',
         '**/*.d.ts',
         // Exclude entry point files from coverage as they are thin wrappers
-        '**/index.tsx'
-      ]
-    }
-  }
+        '**/index.tsx',
+      ],
+    },
+  },
 });

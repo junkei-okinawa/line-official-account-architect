@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import ErrorBoundary from '../../../components/ErrorBoundary';
 
 describe('ErrorBoundary', () => {
@@ -10,7 +9,7 @@ describe('ErrorBoundary', () => {
         <div data-testid="child">Child content</div>
       </ErrorBoundary>
     );
-    
+
     expect(screen.getByTestId('child')).toBeInTheDocument();
     expect(container.querySelector('[data-testid="child"]')).toBeTruthy();
   });
@@ -56,9 +55,9 @@ describe('ErrorBoundary', () => {
     );
 
     expect(screen.getByText(/詳細情報/i)).toBeInTheDocument();
-    
+
     const details = screen.getByTestId('error-details');
-    // details 要素はデフォルトで open 属性を持つが、jsdom では動作しないため省略
+    // details 要素はデフォルトで open 属性を持つが、happy-dom では動作しないため省略
     expect(details).toBeInTheDocument();
   });
 });

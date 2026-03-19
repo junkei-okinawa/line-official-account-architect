@@ -3,18 +3,20 @@ import { MessageSendTestResult, McpServerConfig } from '../types';
 import { mcpService } from '../services/mcpService';
 import {
   MessageSquare,
-  Send as SendIcon,
+  Send,
   Loader2,
   CheckCircle2,
   XCircle,
   Text,
   LayoutTemplate,
-  Paperclip
+  Paperclip,
 } from 'lucide-react';
 
 interface MessageSendTestUIProps {
   mcpConfig: McpServerConfig;
 }
+
+type FlexMessageContent = Record<string, unknown>;
 
 const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
   const [isConnected, setIsConnected] = useState(mcpService.isConnected());
@@ -69,11 +71,16 @@ const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
     setIsSending(true);
 
     try {
-      let content: any;
+      let content: string | FlexMessageContent;
       if (messageType === 'flex') {
         try {
-          content = JSON.parse(testFlexJson);
-        } catch (e) {
+          const parsed = JSON.parse(testFlexJson) as unknown;
+          if (typeof parsed !== 'object' || parsed === null) {
+            alert('Flex Message JSON が無効です');
+            return;
+          }
+          content = parsed as FlexMessageContent;
+        } catch {
           alert('Flex Message JSON が無効です');
           return;
         }
@@ -81,11 +88,7 @@ const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
         content = testMessageContent.trim();
       }
 
-      const result = await mcpService.testMessageSend(
-        testUserId.trim(),
-        messageType,
-        content
-      );
+      const result = await mcpService.testMessageSend(testUserId.trim(), messageType, content);
 
       setSendHistory((prev) => [result, ...prev].slice(0, 10)); // 直近 10 件を保持
 
@@ -95,10 +98,9 @@ const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
         console.log('メッセージ送信成功:', result);
       }
     } catch (error) {
-      setSendHistory((prev) => [
-        { success: false, error: String(error), timestamp: new Date() },
-        ...prev
-      ].slice(0, 10));
+      setSendHistory((prev) =>
+        [{ success: false, error: String(error), timestamp: new Date() }, ...prev].slice(0, 10)
+      );
       alert(`エラーが発生しました：${error}`);
     } finally {
       setIsSending(false);
@@ -196,13 +198,14 @@ const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
       }
     ]
   }
-}`
+}`,
     };
 
     setTestFlexJson(templates[type]);
   };
 
-  const hasContent = messageType === 'text' ? testMessageContent.trim().length > 0 : testFlexJson.trim().length > 0;
+  const hasContent =
+    messageType === 'text' ? testMessageContent.trim().length > 0 : testFlexJson.trim().length > 0;
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
@@ -271,7 +274,9 @@ const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
       {messageType === 'flex' && (
         <>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Flex Message JSON</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Flex Message JSON
+            </label>
             <textarea
               value={testFlexJson}
               onChange={(e) => setTestFlexJson(e.target.value)}
@@ -324,7 +329,7 @@ const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
           </>
         ) : (
           <>
-            <SendIcon className="w-5 h-5" /> テスト送信
+            <Send className="w-5 h-5" /> テスト送信
           </>
         )}
       </button>
@@ -348,7 +353,9 @@ const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
                   ) : (
                     <XCircle className="w-4 h-4 text-red-600 shrink-0" />
                   )}
-                  <span className="text-xs text-gray-500">{new Date(entry.timestamp).toLocaleTimeString()}</span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(entry.timestamp).toLocaleTimeString()}
+                  </span>
                 </div>
                 {entry.success ? (
                   <p className="text-sm font-medium text-green-700">送信成功</p>
@@ -364,7 +371,8 @@ const MessageSendTestUI: React.FC<MessageSendTestUIProps> = ({ mcpConfig }) => {
       {/* ヒント */}
       {!isConnected && sendHistory.length === 0 && (
         <p className="mt-4 text-xs text-gray-500">
-          MCP サーバーに接続すると、実際のユーザー ID にテストメッセージを送信できます。<br />
+          MCP サーバーに接続すると、実際のユーザー ID にテストメッセージを送信できます。
+          <br />
           ユーザー ID は LINE Developers コンソールや API レスポンスから取得してください。
         </p>
       )}

@@ -13,9 +13,10 @@ interface State {
 }
 
 class ErrorBoundary extends Component<Props, State> {
+  state: State = { hasError: false, error: null, errorInfo: null };
+
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
@@ -67,7 +68,10 @@ class ErrorBoundary extends Component<Props, State> {
             </ol>
 
             {this.state.error && (
-              <details data-testid="error-details" className="mb-6 bg-gray-50 rounded-lg p-4 overflow-hidden">
+              <details
+                data-testid="error-details"
+                className="mb-6 bg-gray-50 rounded-lg p-4 overflow-hidden"
+              >
                 <summary className="font-semibold text-sm text-gray-700 cursor-pointer mb-2">
                   詳細情報（開発者向け）
                 </summary>

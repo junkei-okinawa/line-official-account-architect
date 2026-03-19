@@ -1,0 +1,37 @@
+import js from '@eslint/js';
+import tseslang from 'typescript-eslint';
+import globals from 'globals';
+import prettierConfig from 'eslint-config-prettier';
+
+export default [
+  { ignores: ['dist', 'node_modules', '.pnp.cjs', '.pnp.loader.mjs', 'coverage'] },
+
+  js.configs.recommended,
+  ...tseslang.configs.recommended,
+
+  {
+    languageOptions: {
+      parser: tseslang.parser,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+
+    plugins: {
+      '@typescript-eslint': tseslang.plugin,
+    },
+
+    rules: {
+      ...tseslang.configs.recommended.rules,
+
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^(_[a-z]*|e)$', varsIgnorePattern: '^_' }, // Allow error param `e` or `_e` in catch blocks
+      ],
+    },
+  },
+
+  { files: ['**/*.{js,jsx,ts,tsx}'], languageOptions: { globals: { React: 'readonly' } } },
+  prettierConfig,
+];

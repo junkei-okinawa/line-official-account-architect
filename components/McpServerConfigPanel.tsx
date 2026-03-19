@@ -17,7 +17,7 @@ const McpServerConfigPanel: React.FC<McpServerConfigPanelProps> = ({ initialConf
     const config: McpServerConfig = {
       serverUrl,
       channelToken,
-      enabled: initialConfig.enabled
+      enabled: initialConfig.enabled,
     };
     onSave(config);
     localStorage.setItem('mcp_server_config', JSON.stringify(config));
@@ -128,7 +128,8 @@ const McpServerConfigPanel: React.FC<McpServerConfigPanelProps> = ({ initialConf
 
       {/* ヘルプテキスト */}
       <p className="mt-3 text-xs text-gray-500">
-        MCP サーバーは別途デプロイが必要です。詳細は GitHub の line-bot-mcp-server を参照してください。
+        MCP サーバーは別途デプロイが必要です。詳細は GitHub の line-bot-mcp-server
+        を参照してください。
       </p>
     </div>
   );

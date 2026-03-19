@@ -1,4 +1,4 @@
-import { McpServerConfig, RichMenuOperationResult, MessageSendTestResult } from "../types";
+import { McpServerConfig, RichMenuOperationResult, MessageSendTestResult } from '../types';
 
 /**
  * MCP サーバーとの通信サービス
@@ -6,7 +6,12 @@ import { McpServerConfig, RichMenuOperationResult, MessageSendTestResult } from 
 export class McpService {
   private ws: WebSocket | null = null;
   private config: McpServerConfig | null = null;
-  private messageQueue: Array<{ id: number; data: any; resolve: (value: any) => void, reject: (reason?: any) => void }> = [];
+  private messageQueue: Array<{
+    id: number;
+    data: unknown;
+    resolve: (value: JsonRpcResponse) => void;
+    reject: (reason?: unknown) => void;
+  }> = [];
   private messageIdCounter = 0;
 
   /**
@@ -73,7 +78,11 @@ export class McpService {
    * 接続状態を取得
    */
   isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN && !!this.config;
+    if (!this.ws || !this.config || typeof WebSocket === 'undefined') {
+      return false;
+    }
+
+    return this.ws.readyState === WebSocket.OPEN;
   }
 
   /**
@@ -81,7 +90,7 @@ export class McpService {
    */
   async richMenuOperation(
     action: 'generate' | 'upload' | 'register' | 'delete' | 'list',
-    data?: any
+    data?: Record<string, unknown>
   ): Promise<RichMenuOperationResult> {
     if (!this.isConnected()) {
       return { success: false, error: 'MCP サーバーに接続されていません' };
@@ -90,17 +99,20 @@ export class McpService {
     try {
       const response = await this.sendRequest({
         method: 'richmenu.' + action,
-        params: data || {}
+        params: data || {},
       });
 
       if (response.error) {
         return { success: false, error: response.error.message };
       }
 
+      const richMenuId = toStringValue(response.result?.richMenuId);
+      const message = asString(response.result?.message) ?? '操作が完了しました';
+
       return {
         success: true,
-        richMenuId: response.result?.richMenuId,
-        message: response.result?.message || '操作が完了しました'
+        richMenuId,
+        message,
       };
     } catch (error) {
       console.error('リッチメニュー操作エラー:', error);
@@ -114,7 +126,7 @@ export class McpService {
   async testMessageSend(
     toUserId: string,
     messageType: 'text' | 'flex',
-    content: any
+    content: string | Record<string, unknown>
   ): Promise<MessageSendTestResult> {
     if (!this.isConnected()) {
       return { success: false, error: 'MCP サーバーに接続されていません', timestamp: new Date() };
@@ -126,18 +138,21 @@ export class McpService {
         params: {
           to: toUserId,
           type: messageType,
-          message: content
-        }
+          message: content,
+        },
       });
 
       if (response.error) {
         return { success: false, error: response.error.message, timestamp: new Date() };
       }
 
+      const messageId =
+        toStringValue(response.result?.messageId) ?? toStringValue(response.result?.success);
+
       return {
         success: true,
-        messageId: response.result?.messageId || response.result?.success,
-        timestamp: new Date()
+        messageId,
+        timestamp: new Date(),
       };
     } catch (error) {
       console.error('メッセージ送信エラー:', error);
@@ -159,13 +174,16 @@ export class McpService {
   /**
    * リクエストを送信（内部）
    */
-  private sendRequest(request: { method: string; params?: any }): Promise<any> {
+  private sendRequest(request: {
+    method: string;
+    params?: Record<string, unknown>;
+  }): Promise<JsonRpcResponse> {
     return new Promise((resolve, reject) => {
       const id = this.messageIdCounter++;
       const message = {
         jsonrpc: '2.0',
         id,
-        ...request
+        ...request,
       };
 
       if (this.ws?.readyState === WebSocket.OPEN) {
@@ -179,13 +197,13 @@ export class McpService {
         // レスポンスハンドラーを一時登録
         const handler = (event: MessageEvent) => {
           try {
-            const response = JSON.parse(event.data);
+            const response = JSON.parse(event.data) as JsonRpcResponse;
             if (response.id === id) {
               this.ws?.removeEventListener('message', handler);
               clearTimeout(timeoutId);
               resolve(response);
             }
-          } catch (e) {
+          } catch {
             // 解析エラーは無視
           }
         };
@@ -200,7 +218,7 @@ export class McpService {
   /**
    * レスポンスを処理（内部）
    */
-  private handleResponse(response: any): void {
+  private handleResponse(_response: JsonRpcResponse): void {
     // 現在はこの実装ではキュー処理を使用
     this.processQueue();
   }
@@ -212,6 +230,25 @@ export class McpService {
     // 現在のところキューは使用しないが、将来の拡張のために予約
   }
 }
+
+type JsonRpcError = {
+  message: string;
+};
+
+type JsonRpcResponse = {
+  id?: number;
+  result?: Record<string, unknown>;
+  error?: JsonRpcError;
+};
+
+const asString = (value: unknown): string | undefined =>
+  typeof value === 'string' ? value : undefined;
+
+const toStringValue = (value: unknown): string | undefined => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return undefined;
+};
 
 // シングルトンインスタンス
 export const mcpService = new McpService();

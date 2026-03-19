@@ -1,8 +1,5 @@
 {
   "name": "LINE OA Architect",
   "description": "An AI-powered interactive platform to design, configure, and preview your LINE Official Account using Gemini and the Messaging API.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
+  "requestFramePermissions": ["camera", "microphone"]
 }
