@@ -205,6 +205,6 @@ mod tests {
         };
 
         assert_eq!(config.server_url, "ws://localhost:3000");
-        assert!(!config.enabled); // Should be false initially
+        assert!(config.enabled); // Should be true as set
     }
 }
