@@ -389,5 +389,171 @@ pub async fn chat_with_gemini(
 
 ---
 
+---
+
+## 8. 詳細アーキテクチャ分析結果
+
+### ステート管理パターン
+
+- **useState 使用頻度**: 全コンポーネントにわたって広範な使用 (RichMenuControlPanel.tsx:12+ hooks, McpServerConfigPanel.tsx:3 hooks)
+- **useEffect パターン**: WebSocket 接続状態同期用 (mcpService.ts:46-52)
+- **カスタムフック**: なし - すべてのロジックはインラインまたはサービスクラス内
+
+### コンポーネント構造
+
+```
+components/
+├── App.tsx (806 lines) - メインコンテナ、チャット/設定/プレビュータブ
+├── RichMenuControlPanel.tsx (331 lines) - MCP リッチメニュー操作
+├── McpServerConfigPanel.tsx (138 lines) - WebSocket 設定 UI
+├── MessageSendTestUI.tsx (383 lines) - メッセージテストインターフェース
+├── MobilePreview.tsx (100 lines) - チャットプレビューコンポーネント
+└── ErrorBoundary.tsx (109 lines) - クラスベースのエラー処理
+```
+
+### 外部依存関係
+
+- **@google/genai**: Rust ワASM/FFI バインディングで代替可能
+- **lucide-react**: leptos_icons または SVG コンポーネントに置換必要
+- **react/react-dom**: Leptos 用削除必須
+
+### スタイリングアプローチ
+
+- **100% Tailwind CSS ユーティリティクラス** (例：`className="bg-white rounded-xl shadow-lg p-6"`)
+- スタイルドコンポーネントまたはインラインスタイルなし
+- index.css にカスタムアニメーション定義
+
+### API インテグレーションパターン
+
+- **WebSocket MCP サービス**: async/await パターン、メッセージキュー実装 (mcpService.ts:9-15)
+- **HTTP クライアント**: @google/genai を介したネイティブ fetch 使用、axios なし
+- **エラー処理**: カスタムエラークラス (GeminiError)、try-catch 内蔵
+
+### TypeScript 型定義
+
+- シンプルなインターフェース、プリミティブ型のみ
+- 高度なジェネリクスまたは複雑な型機能なし
+- ユニオン型とオプションフィールド使用
+
+### テストセットアップ
+
+- **Vitest + happy-dom**: Leptos と互換性あり
+- **@testing-library/react**: Leptos テストユーティリティに置換必要
+- **テストファイル**: mcpService.test.ts (49 行), ErrorBoundary.test.tsx (63 行), geminiService.test.ts (121 行)
+
+---
+
+## 9. 移行推奨ワークフロー
+
+### Phase 1: サービス層と型定義（最優先）
+
+```rust
+// types.rs - Rust 型定義の作成
+pub struct Message {
+    pub id: String,
+    pub role: Role, // enum
+    pub content: String,
+    pub timestamp: DateTime<Utc>,
+}
+
+pub struct LineOASettings {
+    pub account_name: String,
+    pub description: String,
+    pub channel_id: String,
+    pub channel_secret: String,
+    pub channel_access_token: String,
+    pub greeting_message: String,
+    pub rich_menu_json: Option<String>,
+}
+
+pub enum Step {
+    Strategy,
+    Config,
+    RichMenu,
+    Messaging,
+    Preview,
+}
+```
+
+### Phase 2: サービス層移行
+
+- `geminiService.ts` → `gemini_service.rs` (reqwest crate)
+- `mcpService.ts` → `mcp_service.rs` (tokio/wasm-bindgen)
+
+### Phase 3: コンポーネントポート
+
+1. **MobilePreview.rs** - シンプルなコンポーネントで移行アプローチを検証
+2. **McpServerConfigPanel.rs** - フォーム処理の基本的なパターン
+3. **RichMenuControlPanel.rs** - 複雑な状態管理パターン
+4. **MessageSendTestUI.rs** - テストフォームロジック
+
+### Phase 4: メインアプリケーションリファクタリング
+
+- `App.tsx` → `app.rs` + パネルコンポーネントの分割
+- レイアウト構造のレプトス互換への変換
+
+### Phase 5: スタイリングとテスト
+
+- Tailwind CSS のレプトス設定確認
+- テストスイートの移行（happy-dom はそのまま使用可能）
+
+---
+
+## 10. 移行コスト見積もり
+
+| フェーズ | 作業内容                                             | 想定日数 |
+| -------- | ---------------------------------------------------- | -------- |
+| Phase 1  | タイプ定義、サービス層の Rust 実装                   | 3-4 日   |
+| Phase 2  | MobilePreview, McpServerConfigPanel のポート         | 3-4 日   |
+| Phase 3  | RichMenuControlPanel, MessageSendTestUI のポート     | 4-5 日   |
+| Phase 4  | App.tsx リファクタリング、メインアプリケーション構築 | 4-5 日   |
+| Phase 5  | テスト移行、デバッグ、最適化                         | 3-4 日   |
+
+---
+
+## 11. 結論と次のステップ
+
+### ✅ 移行可能 - 高実現性
+
+このコードベースは、明確な分離と最小限の複雑なパターンを持つため、レプトスへの移行に適しています。
+
+**移行推奨度**: ⭐⭐⭐⭐☆ (4/5)  
+**技術的障壁**: 低〜中程度  
+**推定労力**: 2-3 週間（1 名）
+
+### 直後のアクション
+
+1. **Feature ブランチ作成完了** - `feat/migrate-to-leptos` に切り替え済み
+2. **移行計画保存完了** - docs/leptos-migration-plan.md に詳細記録
+3. **Phase 1 開始準備** - types.rs の Rust 実装から着手
+
+### 次のステップ
+
+1. **App.tsx 構造のレビュー** - `App.rs`, `ChatPanel.rs`, `ConfigPanel.rs` への分割を検討
+2. **タイプ定義を最初にポート** - `types.rs` に Rust 対応物を作成
+3. **サービス層を移行** - geminiService から reqwest crate を使用して開始
+4. **レプトスプロジェクトを設定** - `cargo leptos new` で作成し、Tailwind CSS と統合
+5. **MobilePreview からポート** - シンプルなコンポーネントで移行アプローチを検証
+
+---
+
+## 12. 参考リソース
+
+### レクトス公式ドキュメント
+
+- [Getting Started](https://leptos.dev/getting_started/)
+- [Component Model](https://leptos.dev/guide/components)
+- [Server-Side Rendering](https://leptos.dev/guide/ssr)
+- [Routing](https://leptos.dev/guide/routing)
+
+### 関連ライブラリ
+
+- `reqwest` - HTTP クライアント（Gemini API 用）
+- `tokio` - アシンクランタイム（MCP WebSocket 用）
+- `wasm-bindgen-futures` - ブラウザ用アシンクサポート
+- `happy-dom` - テスト環境（React Testing Library と互換性あり）
+
+---
+
 **作成者**: Sisyphus  
 **最終更新**: 2026 年 3 月 20 日
