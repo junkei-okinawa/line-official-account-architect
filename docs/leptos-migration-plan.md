@@ -557,3 +557,43 @@ pub enum Step {
 
 **作成者**: Sisyphus  
 **最終更新**: 2026 年 3 月 20 日
+
+---
+
+## 13. 移行進捗状況（2026 年 3 月 20 日）
+
+### ✅ Phase 1: タイプ定義とプロジェクト構造 - **完了**
+
+- [x] `src/types.rs` 作成 - TypeScript 型定義の Rust 実装
+- [x] `Cargo.toml` 設定 - Leptos 0.7, chrono, serde 依存関係追加
+- [x] `src/lib.rs` モジュール構造作成
+- [x] ユニットテスト 7 つの実装とパス確認
+
+**コミット履歴:**
+```
+564d9ce fix: types.rs のテストアサーション修正
+8ff3b15 build: 初期 Rust プロジェクト構造を作成
+290ff69 feat: 移行 Phase 1 - Rust 型定義を作成
+```
+
+### 🔄 Phase 2: サービス層移行 - **進行中**
+
+- [ ] `gemini_service.rs` - reqwest クライアント実装
+- [ ] `mcp_service.rs` - tokio WebSocket 実装
+
+### ⏳ Phase 3-5: コンポーネントポート、リファクタリング、テスト移行
+
+---
+
+## 14. 次のステップ
+
+1. **geminiService.ts → gemini_service.rs**
+   - @google/genai API コールを reqwest に置換
+   - async/await パターン維持
+   
+2. **mcpService.ts → mcp_service.rs**
+   - WebSocket 接続を tokio::net::TcpStream に移行
+   - wasm-bindgen-futures ブラウザ対応
+
+3. **MobilePreview.rs ポート**
+   - シンプルなコンポーネントでレプトス rsx! マクロ習得
